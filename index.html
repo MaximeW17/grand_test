@@ -442,6 +442,7 @@ body.auth-bg::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;bac
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
 import { getDatabase, ref, get, set, onValue, update, remove, serverTimestamp, onDisconnect } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-database.js";
+import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCBcQZgzgThvscz5WhBH-IlC0OGJdltjfQ",
@@ -455,22 +456,36 @@ const firebaseConfig = {
 
 const fbApp = initializeApp(firebaseConfig);
 const fbDB = getDatabase(fbApp);
+const fbAuth = getAuth(fbApp);
 
-// Expose Firebase helpers to the main (non-module) script
-window.__fb = {
-  db: fbDB,
-  ref: (path) => ref(fbDB, path),
-  get, set, onValue, update, remove, serverTimestamp, onDisconnect
-};
-window.dispatchEvent(new Event('firebase-ready'));
+// Sign in anonymously — every visitor gets a UID so security rules work
+signInAnonymously(fbAuth).catch(err => {
+  console.error('Anonymous sign-in failed:', err);
+  window.dispatchEvent(new CustomEvent('firebase-auth-error', { detail: err }));
+});
+
+// Wait for auth to be ready before exposing the DB
+onAuthStateChanged(fbAuth, (user) => {
+  if(user){
+    window.__fb = {
+      db: fbDB,
+      auth: fbAuth,
+      uid: user.uid,
+      ref: (path) => ref(fbDB, path),
+      get, set, onValue, update, remove, serverTimestamp, onDisconnect
+    };
+    window.dispatchEvent(new Event('firebase-ready'));
+  }
+});
 </script>
 
 <script>
 /* ================================================================
    AUTH & SESSION MANAGEMENT (Firebase Realtime Database)
    ================================================================ */
-const ADMIN_EMAIL = "lutintheo9@gmail.com";
-const ADMIN_PASS_HASH = "188bce3868795c7c0c9e891507e2a19a6a5d65ca2556afd4889330a1caae51d7";
+// Admin credentials are NOT stored in this file — they live in Firebase
+// at /admin_config and are protected by security rules.
+let adminConfig = null;       // { email, passHash } loaded from Firebase after auth
 
 let currentUser = null;      // { email, isAdmin }
 let deviceId = null;          // unique ID for this tab/device
@@ -515,19 +530,20 @@ onFirebaseReady(async () => {
   deviceId = getDeviceId();
   authReady = true;
 
-  // Ensure admin email is pre-authorized in the database on first boot
+  // Load admin config from Firebase (protected by security rules - requires auth)
   try {
-    const adminKey = emailKey(ADMIN_EMAIL);
-    const snap = await window.__fb.get(window.__fb.ref('authorized_emails/' + adminKey));
-    if(!snap.exists()){
-      await window.__fb.set(window.__fb.ref('authorized_emails/' + adminKey), {
-        email: ADMIN_EMAIL.toLowerCase(),
-        addedAt: Date.now(),
-        addedBy: 'system'
-      });
+    const cfgSnap = await window.__fb.get(window.__fb.ref('admin_config'));
+    if(cfgSnap.exists()){
+      const cfg = cfgSnap.val();
+      adminConfig = {
+        email: (cfg.email || '').toLowerCase(),
+        passHash: cfg.passHash || ''
+      };
+    } else {
+      console.error('admin_config missing in Firebase database');
     }
   } catch(e){
-    console.warn('Init admin email:', e);
+    console.error('Failed to load admin config:', e);
   }
 
   // Check if user was previously logged in (persist via localStorage)
@@ -542,6 +558,16 @@ onFirebaseReady(async () => {
       if(sessSnap.exists() && sessSnap.val().deviceId === deviceId){
         // Still our session
         currentUser = { email: savedEmail, isAdmin: savedIsAdmin };
+        // If admin, we need to re-establish admin_sessions flag for security rules
+        if(savedIsAdmin && adminConfig && savedEmail === adminConfig.email){
+          try {
+            await window.__fb.set(window.__fb.ref('admin_sessions/' + window.__fb.uid), {
+              isAdmin: true,
+              email: savedEmail,
+              loggedAt: Date.now()
+            });
+          } catch(e){ console.warn('Re-establish admin flag failed:', e); }
+        }
         startSessionWatcher();
         showAppLoggedIn();
       } else {
@@ -681,7 +707,8 @@ async function loginUser(){
     });
 
     // 4. Save local session + go in
-    const isAdmin = (email === ADMIN_EMAIL.toLowerCase());
+    // In user login, we never mark someone as admin — they must use the admin tab
+    const isAdmin = false;
     localStorage.setItem('gt_session_email', email);
     localStorage.setItem('gt_session_admin', isAdmin ? '1' : '0');
     currentUser = { email, isAdmin };
@@ -707,28 +734,53 @@ async function loginAdmin(){
 
   setBtnLoading('btn-login-admin', true);
 
-  if(email !== ADMIN_EMAIL.toLowerCase()){
+  // Make sure admin config is loaded
+  if(!adminConfig){
+    try {
+      const cfgSnap = await window.__fb.get(window.__fb.ref('admin_config'));
+      if(cfgSnap.exists()){
+        const cfg = cfgSnap.val();
+        adminConfig = { email: (cfg.email || '').toLowerCase(), passHash: cfg.passHash || '' };
+      }
+    } catch(e){ /* silent */ }
+  }
+
+  if(!adminConfig || !adminConfig.email || !adminConfig.passHash){
+    setBtnLoading('btn-login-admin', false);
+    showErr('admin', 'Configuration admin indisponible. Réessaie.');
+    return;
+  }
+
+  // Constant-time-ish comparison: always hash before checking email, to avoid leaking which field is wrong
+  const hash = await sha256(pass);
+  const emailOk = (email === adminConfig.email);
+  const passOk = (hash === adminConfig.passHash);
+
+  if(!emailOk || !passOk){
+    // Small delay to mitigate brute-force timing
     setTimeout(() => {
       setBtnLoading('btn-login-admin', false);
       showErr('admin', '❌ Identifiants incorrects.');
-    }, 600);
+    }, 700);
     return;
   }
 
   try {
-    const hash = await sha256(pass);
-    if(hash !== ADMIN_PASS_HASH){
-      setBtnLoading('btn-login-admin', false);
-      showErr('admin', '❌ Identifiants incorrects.');
-      return;
-    }
+    // 1. Set the admin flag in admin_sessions (required by security rules to write authorized_emails)
+    await window.__fb.set(window.__fb.ref('admin_sessions/' + window.__fb.uid), {
+      isAdmin: true,
+      email: email,
+      loggedAt: Date.now()
+    });
 
-    // Admin passes → register session like a normal user (to enforce 1-device also for admin)
+    // 2. Register device session
     const key = emailKey(email);
     const sessSnap = await window.__fb.get(window.__fb.ref('active_sessions/' + key));
     if(sessSnap.exists() && sessSnap.val().deviceId !== deviceId){
       if(!confirm('⚠️ Cet email admin est déjà connecté sur un autre appareil.\n\nContinuer déconnectera l\'autre appareil.\n\nContinuer ?')){
         setBtnLoading('btn-login-admin', false);
+        // Roll back the admin flag
+        try { await window.__fb.remove(window.__fb.ref('admin_sessions/' + window.__fb.uid)); } catch(e){}
         return;
       }
     }
@@ -739,6 +791,18 @@ async function loginAdmin(){
       isAdmin: true,
       userAgent: navigator.userAgent.substring(0, 150)
     });
+
+    // 3. Auto-add admin to authorized_emails on first login (now that rules allow it)
+    try {
+      const authSnap = await window.__fb.get(window.__fb.ref('authorized_emails/' + key));
+      if(!authSnap.exists()){
+        await window.__fb.set(window.__fb.ref('authorized_emails/' + key), {
+          email: email,
+          addedAt: Date.now(),
+          addedBy: 'admin-self'
+        });
+      }
+    } catch(e){ /* non-blocking */ }
 
     localStorage.setItem('gt_session_email', email);
     localStorage.setItem('gt_session_admin', '1');
@@ -793,6 +857,10 @@ async function logout(){
     const snap = await window.__fb.get(window.__fb.ref('active_sessions/' + k));
     if(snap.exists() && snap.val().deviceId === deviceId){
       await window.__fb.remove(window.__fb.ref('active_sessions/' + k));
+    }
+    // Remove admin privilege flag for this browser UID
+    if(currentUser.isAdmin && window.__fb.uid){
+      try { await window.__fb.remove(window.__fb.ref('admin_sessions/' + window.__fb.uid)); } catch(e){}
     }
   } catch(e){ console.warn('logout cleanup:', e); }
   stopSessionWatcher();
@@ -849,18 +917,19 @@ function renderEmailList(data){
     return;
   }
 
+  const adminEmail = (adminConfig && adminConfig.email) ? adminConfig.email : '';
   // Sort: admin first, then alphabetical
   keys.sort((a, b) => {
     const ea = unKeyEmail(a), eb = unKeyEmail(b);
-    if(ea === ADMIN_EMAIL.toLowerCase()) return -1;
-    if(eb === ADMIN_EMAIL.toLowerCase()) return 1;
+    if(ea === adminEmail) return -1;
+    if(eb === adminEmail) return 1;
     return ea.localeCompare(eb);
   });
 
   container.innerHTML = keys.map(k => {
     const info = data[k];
     const email = info.email || unKeyEmail(k);
-    const isAdmin = email === ADMIN_EMAIL.toLowerCase();
+    const isAdmin = email === adminEmail;
     const isActive = !!sessions[k];
     const addedDate = info.addedAt ? new Date(info.addedAt).toLocaleDateString('fr-FR') : '—';
 
@@ -915,7 +984,8 @@ async function adminAddEmail(){
 }
 
 async function adminRemoveEmail(key, email){
-  if(email === ADMIN_EMAIL.toLowerCase()){
+  const adminEmail = (adminConfig && adminConfig.email) ? adminConfig.email : '';
+  if(email === adminEmail){
     showToast('Impossible de supprimer l\'email admin', 'error');
     return;
   }
