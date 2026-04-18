@@ -1,0 +1,1281 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Grand Test IESEG — Révisions</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f4f5f7;min-height:100vh;display:flex;justify-content:center;padding:1rem}
+#app{width:100%;max-width:680px;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.1);align-self:flex-start}
+.screen{display:none}.screen.active{display:block}
+.home-header{background:#1a2a4a;color:#fff;padding:2rem 1.5rem 1.5rem}
+.home-header h1{font-size:22px;font-weight:600}
+.home-header p{font-size:13px;opacity:.7;margin-top:4px}
+.ieseg-badge{display:inline-block;background:#f0a500;color:#fff;font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;margin-bottom:12px}
+.subject-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;padding:1rem}
+.subject-card{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:.75rem 1rem;cursor:pointer;transition:all .15s}
+.subject-card:hover{border-color:#9ca3af;background:#f9fafb}
+.subject-card.selected{border-color:#1a2a4a;background:#eef1f7}
+.subject-name{font-size:13px;font-weight:500;color:#111827;line-height:1.3}
+.subject-code{font-size:11px;color:#9ca3af;margin-top:2px}
+.subject-lang{font-size:10px;padding:2px 7px;border-radius:10px;margin-top:5px;display:inline-block;font-weight:500}
+.lang-fr{background:#dbeafe;color:#1e40af}.lang-en{background:#dcfce7;color:#166534}
+.mode-section{padding:0 1rem 1rem}
+.mode-section h3{font-size:12px;font-weight:600;color:#6b7280;margin-bottom:.5rem;text-transform:uppercase;letter-spacing:.5px}
+.mode-btns{display:flex;gap:8px;flex-wrap:wrap}
+.mode-btn{padding:8px 14px;border:1px solid #e5e7eb;border-radius:8px;background:#fff;cursor:pointer;font-size:13px;color:#6b7280;transition:all .15s}
+.mode-btn.active{background:#1a2a4a;color:#fff;border-color:#1a2a4a}
+.start-btn{display:block;width:calc(100% - 2rem);margin:0 1rem 1rem;padding:13px;background:#f0a500;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer}
+.start-btn:hover{opacity:.9}
+.select-all-btn{font-size:12px;color:#1a2a4a;background:none;border:none;cursor:pointer;text-decoration:underline;padding:0 1rem .5rem;display:block}
+/* QUIZ */
+.quiz-header{background:#1a2a4a;color:#fff;padding:1rem 1.25rem;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.quiz-meta{font-size:12px;opacity:.7}
+.quiz-title{font-size:14px;font-weight:600}
+.progress-bar{height:3px;background:rgba(255,255,255,.15)}
+.progress-fill{height:100%;background:#f0a500;transition:width .3s}
+.q-timer-bar{height:3px;background:#e5e7eb}
+.q-timer-fill{height:100%;background:#1a2a4a;transition:width 1s linear}
+.score-display{font-size:12px;color:rgba(255,255,255,.8);white-space:nowrap}
+.score-display span{font-weight:600;color:#fff}
+.timer{font-size:18px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums;white-space:nowrap}
+.timer.warning{color:#f87171}
+.btn-stop{padding:6px 12px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:8px;color:#fff;font-size:12px;cursor:pointer;font-weight:600;white-space:nowrap;transition:background .15s}
+.btn-stop:hover{background:rgba(220,38,38,.5);border-color:rgba(220,38,38,.7)}
+.question-area{padding:1.25rem 1.25rem .75rem}
+.q-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.75rem}
+.q-number{font-size:12px;color:#9ca3af}
+.q-points-badge{font-size:11px;padding:3px 10px;border-radius:10px;font-weight:600}
+.pts-1{background:#dbeafe;color:#1e40af}.pts-2{background:#fef3c7;color:#92400e}.pts-3{background:#fce7f3;color:#9d174d}
+.q-subject-label{font-size:12px;color:#9ca3af;margin-bottom:.5rem}
+.q-text{font-size:15px;font-weight:500;color:#111827;line-height:1.5;margin-bottom:1rem}
+.multi-hint{font-size:12px;color:#374151;background:#fffbeb;padding:6px 12px;border-radius:8px;margin-bottom:.75rem;border-left:3px solid #f0a500}
+.choices{display:flex;flex-direction:column;gap:8px}
+.choice{display:flex;align-items:flex-start;gap:12px;padding:.75rem 1rem;border:1px solid #e5e7eb;border-radius:10px;cursor:pointer;transition:all .15s;background:#fff}
+.choice:hover{border-color:#9ca3af;background:#f9fafb}
+.choice.selected{border-color:#1a2a4a;background:#eef1f7}
+.choice.correct{border-color:#16a34a;background:#f0fdf4}
+.choice.wrong{border-color:#dc2626;background:#fef2f2}
+.choice.missed{border-color:#f0a500;background:#fffbeb}
+.choice-letter{width:26px;height:26px;border-radius:50%;border:1px solid #e5e7eb;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0;color:#6b7280}
+.choice.selected .choice-letter{background:#1a2a4a;color:#fff;border-color:#1a2a4a}
+.choice.correct .choice-letter{background:#16a34a;color:#fff;border-color:#16a34a}
+.choice.wrong .choice-letter{background:#dc2626;color:#fff;border-color:#dc2626}
+.choice.missed .choice-letter{background:#f0a500;color:#fff;border-color:#f0a500}
+.choice-text{font-size:14px;color:#111827;line-height:1.4;padding-top:3px}
+.q-actions{padding:.75rem 1.25rem 1.25rem;display:flex;gap:8px}
+.btn-validate{flex:1;padding:11px;background:#1a2a4a;color:#fff;border:none;border-radius:10px;font-size:14px;cursor:pointer;font-weight:600}
+.btn-validate:hover{opacity:.9}
+.btn-skip{padding:11px 16px;background:#fff;border:1px solid #e5e7eb;border-radius:10px;font-size:13px;cursor:pointer;color:#6b7280}
+.btn-next{flex:1;padding:11px;background:#f0a500;color:#fff;border:none;border-radius:10px;font-size:14px;cursor:pointer;font-weight:600}
+.feedback-box{margin:0 1.25rem .75rem;padding:1rem;border-radius:10px;border:1px solid}
+.feedback-correct{background:#f0fdf4;border-color:#bbf7d0}
+.feedback-wrong{background:#fef2f2;border-color:#fecaca}
+.feedback-partial{background:#fffbeb;border-color:#fed7aa}
+.feedback-title{font-size:13px;font-weight:600;margin-bottom:4px;color:#111827}
+.feedback-score{font-size:12px;color:#6b7280;margin-bottom:6px}
+.feedback-expl{font-size:13px;color:#374151;line-height:1.5}
+/* MODAL STOP */
+.modal-overlay{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:100;border-radius:16px}
+.modal-box{background:#fff;border-radius:14px;padding:1.75rem;max-width:320px;width:90%;text-align:center}
+.modal-title{font-size:18px;font-weight:700;color:#111827;margin-bottom:.5rem}
+.modal-sub{font-size:14px;color:#6b7280;margin-bottom:1.25rem;line-height:1.5}
+.modal-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:1.25rem}
+.modal-stat{background:#f9fafb;border-radius:8px;padding:.6rem;border:1px solid #e5e7eb}
+.modal-stat-val{font-size:18px;font-weight:700;color:#111827}
+.modal-stat-lbl{font-size:11px;color:#9ca3af;margin-top:1px}
+.modal-btns{display:flex;flex-direction:column;gap:8px}
+.modal-btn-end{padding:11px;background:#dc2626;color:#fff;border:none;border-radius:10px;font-size:14px;cursor:pointer;font-weight:600}
+.modal-btn-resume{padding:11px;background:#1a2a4a;color:#fff;border:none;border-radius:10px;font-size:14px;cursor:pointer;font-weight:600}
+.modal-btn-cancel{padding:9px;background:#fff;border:1px solid #e5e7eb;border-radius:10px;font-size:13px;cursor:pointer;color:#6b7280}
+/* RESULTS */
+.results-header{background:#1a2a4a;color:#fff;padding:2rem 1.5rem;text-align:center}
+.results-score-big{font-size:52px;font-weight:700;color:#f0a500}
+.results-max{font-size:14px;opacity:.7;margin-top:4px}
+.results-grade{font-size:15px;margin-top:.75rem;font-weight:500}
+.results-body{padding:1.25rem}
+.stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:1rem}
+.stat-card{background:#f9fafb;border-radius:10px;padding:.75rem;text-align:center;border:1px solid #e5e7eb}
+.stat-val{font-size:22px;font-weight:700;color:#111827}
+.stat-lbl{font-size:11px;color:#9ca3af;margin-top:2px}
+.review-list{display:flex;flex-direction:column;gap:6px;margin-bottom:1rem;max-height:360px;overflow-y:auto}
+.review-item{padding:.75rem 1rem;border-radius:10px;border:1px solid;font-size:13px}
+.review-item.ok{background:#f0fdf4;border-color:#bbf7d0}
+.review-item.ko{background:#fef2f2;border-color:#fecaca}
+.review-item.partial{background:#fffbeb;border-color:#fed7aa}
+.review-q{font-weight:500;color:#111827;margin-bottom:3px}
+.review-detail{color:#6b7280;font-size:12px}
+.btn-restart{display:block;width:100%;padding:13px;background:#1a2a4a;color:#fff;border:none;border-radius:10px;font-size:14px;cursor:pointer;font-weight:600;margin-bottom:8px}
+.btn-restart:hover{opacity:.9}
+.btn-home{display:block;width:100%;padding:12px;background:#fff;border:1px solid #e5e7eb;border-radius:10px;font-size:14px;cursor:pointer;color:#6b7280}
+.section-title{font-size:13px;font-weight:600;color:#374151;margin-bottom:.5rem;padding-bottom:.5rem;border-bottom:1px solid #e5e7eb}
+#screen-quiz{position:relative}
+/* === LOGIN & ADMIN SCREENS === */
+body.auth-bg{background:linear-gradient(135deg,#1a2a4a 0%,#2d4a7c 50%,#1a2a4a 100%);background-attachment:fixed}
+body.auth-bg::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background:radial-gradient(circle at 20% 30%,rgba(240,165,0,.15) 0%,transparent 50%),radial-gradient(circle at 80% 70%,rgba(240,165,0,.1) 0%,transparent 50%);pointer-events:none;z-index:0}
+#app.auth-mode{background:rgba(255,255,255,.98);backdrop-filter:blur(10px);box-shadow:0 20px 60px rgba(0,0,0,.3);max-width:460px;position:relative;z-index:1}
+.auth-header{background:linear-gradient(135deg,#1a2a4a 0%,#2d4a7c 100%);color:#fff;padding:2.5rem 2rem 2rem;text-align:center;position:relative;overflow:hidden}
+.auth-header::after{content:'';position:absolute;bottom:-50%;left:-20%;right:-20%;height:100%;background:radial-gradient(ellipse at center top,rgba(240,165,0,.2) 0%,transparent 70%)}
+.auth-logo{width:64px;height:64px;margin:0 auto 1rem;background:#f0a500;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;color:#1a2a4a;box-shadow:0 8px 20px rgba(240,165,0,.4);position:relative;z-index:1}
+.auth-title{font-size:24px;font-weight:700;margin-bottom:.35rem;position:relative;z-index:1;letter-spacing:-.3px}
+.auth-sub{font-size:13px;opacity:.75;position:relative;z-index:1}
+.auth-body{padding:2rem}
+.auth-tabs{display:flex;background:#f4f5f7;border-radius:10px;padding:4px;margin-bottom:1.5rem;gap:4px}
+.auth-tab{flex:1;padding:9px;background:transparent;border:none;border-radius:7px;font-size:13px;font-weight:600;color:#6b7280;cursor:pointer;transition:all .2s}
+.auth-tab.active{background:#fff;color:#1a2a4a;box-shadow:0 2px 4px rgba(0,0,0,.08)}
+.auth-field{margin-bottom:1rem}
+.auth-label{display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:.45rem;text-transform:uppercase;letter-spacing:.5px}
+.auth-input{width:100%;padding:12px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;font-family:inherit;transition:all .2s;background:#fff}
+.auth-input:focus{outline:none;border-color:#1a2a4a;box-shadow:0 0 0 3px rgba(26,42,74,.1)}
+.auth-input::placeholder{color:#9ca3af}
+.auth-btn{width:100%;padding:13px;background:linear-gradient(135deg,#f0a500 0%,#d89400 100%);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;transition:all .2s;box-shadow:0 4px 12px rgba(240,165,0,.3);letter-spacing:.3px}
+.auth-btn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 16px rgba(240,165,0,.4)}
+.auth-btn:disabled{opacity:.6;cursor:not-allowed;transform:none}
+.auth-btn.secondary{background:#1a2a4a;box-shadow:0 4px 12px rgba(26,42,74,.3)}
+.auth-btn.secondary:hover:not(:disabled){box-shadow:0 6px 16px rgba(26,42,74,.4)}
+.auth-err{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;padding:10px 12px;border-radius:8px;font-size:13px;margin-bottom:1rem;display:none}
+.auth-err.visible{display:block;animation:shake .4s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+.auth-success{background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;padding:10px 12px;border-radius:8px;font-size:13px;margin-bottom:1rem;display:none}
+.auth-success.visible{display:block}
+.auth-footer{text-align:center;padding-top:1rem;border-top:1px solid #f3f4f6;margin-top:1.5rem}
+.auth-footer-text{font-size:12px;color:#9ca3af}
+.auth-loading{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;margin-right:6px;vertical-align:-2px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.user-bar{display:flex;justify-content:space-between;align-items:center;padding:.65rem 1rem;background:#f9fafb;border-bottom:1px solid #e5e7eb;font-size:12px;flex-wrap:wrap;gap:.5rem}
+.user-bar-info{color:#6b7280;display:flex;align-items:center;gap:6px;min-width:0}
+.user-bar-info strong{color:#1a2a4a;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.user-bar-actions{display:flex;gap:6px}
+.user-bar-btn{padding:5px 10px;background:#fff;border:1px solid #e5e7eb;border-radius:6px;font-size:11px;color:#374151;cursor:pointer;font-weight:500;transition:all .15s}
+.user-bar-btn:hover{background:#f4f5f7;border-color:#9ca3af}
+.user-bar-btn.admin-b{background:#1a2a4a;color:#fff;border-color:#1a2a4a}
+.user-bar-btn.admin-b:hover{background:#0f1a33}
+.user-bar-btn.logout-b{color:#dc2626;border-color:#fecaca}
+.user-bar-btn.logout-b:hover{background:#fef2f2}
+/* ADMIN */
+#screen-admin{display:none}
+.admin-header{background:linear-gradient(135deg,#1a2a4a 0%,#2d4a7c 100%);color:#fff;padding:1.75rem 1.5rem;display:flex;align-items:center;gap:12px}
+.admin-header-icon{width:42px;height:42px;background:#f0a500;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.admin-header-text h2{font-size:18px;font-weight:700;margin-bottom:2px}
+.admin-header-text p{font-size:12px;opacity:.75}
+.admin-body{padding:1.5rem}
+.admin-section{margin-bottom:1.75rem}
+.admin-section-title{font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.8px;margin-bottom:.75rem;display:flex;align-items:center;gap:6px}
+.admin-stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1.5rem}
+.admin-stat{background:linear-gradient(135deg,#f9fafb 0%,#fff 100%);border:1px solid #e5e7eb;border-radius:12px;padding:1rem;position:relative;overflow:hidden}
+.admin-stat::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%;background:#f0a500}
+.admin-stat-val{font-size:24px;font-weight:700;color:#1a2a4a}
+.admin-stat-lbl{font-size:11px;color:#6b7280;margin-top:2px;text-transform:uppercase;letter-spacing:.4px}
+.admin-add-row{display:flex;gap:8px;margin-bottom:1rem}
+.admin-add-row input{flex:1;padding:11px 13px;border:1.5px solid #e5e7eb;border-radius:9px;font-size:13px;font-family:inherit;transition:all .2s}
+.admin-add-row input:focus{outline:none;border-color:#1a2a4a;box-shadow:0 0 0 3px rgba(26,42,74,.1)}
+.admin-add-btn{padding:11px 16px;background:#1a2a4a;color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
+.admin-add-btn:hover{background:#0f1a33}
+.admin-email-list{background:#fff;border:1px solid #e5e7eb;border-radius:10px;max-height:320px;overflow-y:auto}
+.admin-email-row{display:flex;justify-content:space-between;align-items:center;padding:.7rem 1rem;border-bottom:1px solid #f3f4f6;gap:8px}
+.admin-email-row:last-child{border-bottom:none}
+.admin-email-row:hover{background:#f9fafb}
+.admin-email-info{flex:1;min-width:0}
+.admin-email-addr{font-size:13px;color:#111827;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.admin-email-meta{font-size:11px;color:#9ca3af;margin-top:2px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.admin-email-badge{padding:2px 7px;border-radius:10px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.3px}
+.badge-active{background:#dcfce7;color:#166534}
+.badge-inactive{background:#f3f4f6;color:#6b7280}
+.badge-admin{background:#fef3c7;color:#92400e}
+.admin-email-actions{display:flex;gap:6px;flex-shrink:0}
+.admin-btn-icon{width:28px;height:28px;border:1px solid #e5e7eb;background:#fff;border-radius:6px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.admin-btn-icon:hover{background:#fef2f2;border-color:#fecaca;color:#dc2626}
+.admin-btn-icon.kick:hover{background:#fffbeb;border-color:#fed7aa;color:#d97706}
+.admin-empty{text-align:center;padding:2rem 1rem;color:#9ca3af;font-size:13px}
+.admin-back-btn{display:flex;align-items:center;gap:6px;padding:10px 14px;background:#fff;border:1px solid #e5e7eb;border-radius:9px;font-size:13px;color:#6b7280;cursor:pointer;font-weight:500;margin-top:1rem;width:100%;justify-content:center}
+.admin-back-btn:hover{background:#f4f5f7}
+.admin-toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1a2a4a;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:500;box-shadow:0 8px 20px rgba(0,0,0,.2);z-index:1000;animation:toast-in .3s}
+.admin-toast.error{background:#dc2626}
+.admin-toast.success{background:#16a34a}
+@keyframes toast-in{from{opacity:0;transform:translate(-50%,10px)}to{opacity:1;transform:translate(-50%,0)}}
+/* SESSION CONFLICT MODAL */
+.conflict-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;z-index:9999;padding:1rem;backdrop-filter:blur(4px)}
+.conflict-box{background:#fff;border-radius:16px;padding:2rem;max-width:400px;width:100%;text-align:center;box-shadow:0 25px 60px rgba(0,0,0,.4);animation:conflict-in .3s}
+@keyframes conflict-in{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
+.conflict-icon{width:64px;height:64px;margin:0 auto 1rem;background:#fef2f2;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:30px}
+.conflict-title{font-size:20px;font-weight:700;color:#111827;margin-bottom:.5rem}
+.conflict-msg{font-size:14px;color:#6b7280;line-height:1.5;margin-bottom:1.5rem}
+.conflict-btn{padding:11px 24px;background:#1a2a4a;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer}
+.conflict-btn:hover{background:#0f1a33}
+/* INITIAL LOADING */
+#auth-loading{position:fixed;top:0;left:0;right:0;bottom:0;background:linear-gradient(135deg,#1a2a4a 0%,#2d4a7c 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10000;color:#fff}
+#auth-loading .auth-logo{width:72px;height:72px;font-size:32px;margin-bottom:1.5rem}
+#auth-loading-text{font-size:13px;opacity:.7;margin-top:1rem}
+.big-spinner{width:40px;height:40px;border:3px solid rgba(255,255,255,.2);border-top-color:#f0a500;border-radius:50%;animation:spin 0.8s linear infinite}
+</style>
+</head>
+<body>
+
+<!-- INITIAL LOADING SCREEN (before Firebase connects) -->
+<div id="auth-loading">
+  <div class="auth-logo">GT</div>
+  <div class="big-spinner"></div>
+  <div id="auth-loading-text">Connexion au serveur…</div>
+</div>
+
+<!-- SESSION CONFLICT MODAL (shown when user logged in elsewhere) -->
+<div id="conflict-overlay" class="conflict-overlay" style="display:none">
+  <div class="conflict-box">
+    <div class="conflict-icon">⚠️</div>
+    <div class="conflict-title">Session terminée</div>
+    <div class="conflict-msg">Ton compte vient d'être utilisé sur un autre appareil. Tu as été déconnecté de cet appareil pour garantir la limite d'un utilisateur par email.</div>
+    <button class="conflict-btn" onclick="location.reload()">Retour à la connexion</button>
+  </div>
+</div>
+
+<div id="app">
+
+<!-- LOGIN SCREEN -->
+<div id="screen-login" class="screen active" style="display:none">
+  <div class="auth-header">
+    <div class="auth-logo">GT</div>
+    <div class="auth-title">Grand Test IESEG</div>
+    <div class="auth-sub">Plateforme de révision sécurisée</div>
+  </div>
+  <div class="auth-body">
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tab-user" onclick="switchAuthTab('user')">Étudiant</button>
+      <button class="auth-tab" id="tab-admin" onclick="switchAuthTab('admin')">Admin</button>
+    </div>
+
+    <!-- USER LOGIN -->
+    <div id="form-user">
+      <div class="auth-err" id="err-user"></div>
+      <div class="auth-field">
+        <label class="auth-label" for="login-email">Email</label>
+        <input type="email" class="auth-input" id="login-email" placeholder="prénom.nom@ieseg.fr" autocomplete="email">
+      </div>
+      <button class="auth-btn" id="btn-login-user" onclick="loginUser()">Se connecter</button>
+      <div class="auth-footer">
+        <div class="auth-footer-text">Seuls les emails autorisés peuvent se connecter.<br>Contacte l'administrateur pour l'accès.</div>
+      </div>
+    </div>
+
+    <!-- ADMIN LOGIN -->
+    <div id="form-admin" style="display:none">
+      <div class="auth-err" id="err-admin"></div>
+      <div class="auth-field">
+        <label class="auth-label" for="admin-email">Email admin</label>
+        <input type="email" class="auth-input" id="admin-email" placeholder="admin@…" autocomplete="email">
+      </div>
+      <div class="auth-field">
+        <label class="auth-label" for="admin-pass">Mot de passe</label>
+        <input type="password" class="auth-input" id="admin-pass" placeholder="••••••••" autocomplete="current-password">
+      </div>
+      <button class="auth-btn secondary" id="btn-login-admin" onclick="loginAdmin()">Accès administrateur</button>
+      <div class="auth-footer">
+        <div class="auth-footer-text">Espace réservé. Accès restreint.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN SCREEN -->
+<div id="screen-admin" class="screen">
+  <div class="admin-header">
+    <div class="admin-header-icon">⚙️</div>
+    <div class="admin-header-text">
+      <h2>Espace Administrateur</h2>
+      <p>Gestion des accès et des sessions</p>
+    </div>
+  </div>
+  <div class="admin-body">
+    <div class="admin-section">
+      <div class="admin-section-title">📊 Vue d'ensemble</div>
+      <div class="admin-stat-grid">
+        <div class="admin-stat">
+          <div class="admin-stat-val" id="stat-emails">0</div>
+          <div class="admin-stat-lbl">Emails autorisés</div>
+        </div>
+        <div class="admin-stat">
+          <div class="admin-stat-val" id="stat-active">0</div>
+          <div class="admin-stat-lbl">Sessions actives</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="admin-section">
+      <div class="admin-section-title">➕ Ajouter un email</div>
+      <div class="admin-add-row">
+        <input type="email" id="new-email" placeholder="email@exemple.com" autocomplete="off">
+        <button class="admin-add-btn" onclick="adminAddEmail()">Ajouter</button>
+      </div>
+    </div>
+
+    <div class="admin-section">
+      <div class="admin-section-title">👥 Liste des emails autorisés</div>
+      <div class="admin-email-list" id="admin-email-list">
+        <div class="admin-empty">Chargement…</div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:1rem">
+      <button class="admin-back-btn" onclick="adminGoToApp()" style="background:#1a2a4a;color:#fff;border-color:#1a2a4a">📚 Aller réviser</button>
+      <button class="admin-back-btn" onclick="logout()">← Déconnexion</button>
+    </div>
+  </div>
+</div>
+
+<!-- USER BAR (visible on home/quiz/results) -->
+<div class="user-bar" id="user-bar" style="display:none">
+  <div class="user-bar-info">👤 Connecté : <strong id="user-bar-email"></strong></div>
+  <div class="user-bar-actions">
+    <button class="user-bar-btn admin-b" id="user-bar-admin" style="display:none" onclick="goAdmin()">⚙️ Admin</button>
+    <button class="user-bar-btn logout-b" onclick="logout()">Déconnexion</button>
+  </div>
+</div>
+
+<!-- HOME -->
+<div id="screen-home" class="screen active">
+  <div class="home-header">
+    <div class="ieseg-badge">IESEG School of Management</div>
+    <h1>Grand Test — Révisions</h1>
+    <p>Format officiel · Scoring réel · Questions illimitées</p>
+  </div>
+  <div style="padding:.75rem 1rem .25rem;display:flex;justify-content:space-between;align-items:center">
+    <span style="font-size:13px;font-weight:600;color:#111827">Choisir les matières</span>
+    <button class="select-all-btn" onclick="toggleAll()">Tout sélectionner / désélectionner</button>
+  </div>
+  <div class="subject-grid" id="subject-grid"></div>
+  <div class="mode-section">
+    <h3>Mode d'entraînement</h3>
+    <div class="mode-btns">
+      <button class="mode-btn active" data-mode="training" onclick="setMode(this,'training')">Entraînement libre</button>
+      <button class="mode-btn" data-mode="exam" onclick="setMode(this,'exam')">Simulation examen (2h)</button>
+      <button class="mode-btn" data-mode="rapid" onclick="setMode(this,'rapid')">Chrono rapide (30s/q)</button>
+    </div>
+  </div>
+  <div class="mode-section" style="margin-top:.5rem">
+    <h3>Difficulté</h3>
+    <div class="mode-btns">
+      <button class="mode-btn active" data-diff="all" onclick="setDiff(this,'all')">Toutes (1-2-3 pts)</button>
+      <button class="mode-btn" data-diff="1" onclick="setDiff(this,'1')">1 point</button>
+      <button class="mode-btn" data-diff="2" onclick="setDiff(this,'2')">2 points</button>
+      <button class="mode-btn" data-diff="3" onclick="setDiff(this,'3')">3 points</button>
+    </div>
+  </div>
+  <button class="start-btn" onclick="startQuiz()">Commencer l'entraînement →</button>
+</div>
+
+<!-- QUIZ -->
+<div id="screen-quiz" class="screen">
+  <div class="quiz-header">
+    <div style="flex:1;min-width:0">
+      <div class="quiz-meta" id="quiz-meta">Question 1 / 20</div>
+      <div class="quiz-title" id="quiz-subject">Sociologie</div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+      <div class="timer" id="timer"></div>
+      <div class="score-display">Score : <span id="live-score">0</span> pts</div>
+    </div>
+    <button class="btn-stop" onclick="openStopModal()">⏹ Stop</button>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+  <div class="q-timer-bar"><div class="q-timer-fill" id="q-timer-fill" style="width:100%"></div></div>
+  <div class="question-area">
+    <div class="q-header">
+      <span class="q-number" id="q-number">Q1</span>
+      <span class="q-points-badge pts-1" id="q-pts-badge">1 point</span>
+    </div>
+    <div class="q-subject-label" id="q-subject-label"></div>
+    <div class="q-text" id="q-text"></div>
+    <div class="multi-hint" id="multi-hint" style="display:none">⚠️ Plusieurs réponses correctes possibles — cochez tout ce qui s'applique</div>
+    <div class="choices" id="choices"></div>
+  </div>
+  <div class="feedback-box" id="feedback-box" style="display:none">
+    <div class="feedback-title" id="feedback-title"></div>
+    <div class="feedback-score" id="feedback-score"></div>
+    <div class="feedback-expl" id="feedback-expl"></div>
+  </div>
+  <div class="q-actions">
+    <button class="btn-skip" onclick="skipQuestion()" id="btn-skip">Passer</button>
+    <button class="btn-validate" onclick="validateQuestion()" id="btn-validate">Valider</button>
+    <button class="btn-next" onclick="nextQuestion()" id="btn-next" style="display:none">Suivant →</button>
+  </div>
+  <!-- STOP MODAL -->
+  <div class="modal-overlay" id="stop-modal" style="display:none">
+    <div class="modal-box">
+      <div class="modal-title">⏸ Session en pause</div>
+      <div class="modal-sub">Tu veux arrêter ou continuer ?</div>
+      <div class="modal-stats">
+        <div class="modal-stat"><div class="modal-stat-val" id="modal-q-done">0</div><div class="modal-stat-lbl">Questions faites</div></div>
+        <div class="modal-stat"><div class="modal-stat-val" id="modal-score">0</div><div class="modal-stat-lbl">Score actuel</div></div>
+      </div>
+      <div class="modal-btns">
+        <button class="modal-btn-resume" onclick="closeStopModal()">▶ Reprendre</button>
+        <button class="modal-btn-end" onclick="endQuiz()">Terminer et voir les résultats</button>
+        <button class="modal-btn-cancel" onclick="goHome()">← Accueil</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- RESULTS -->
+<div id="screen-results" class="screen">
+  <div class="results-header">
+    <div style="font-size:13px;opacity:.7;margin-bottom:.5rem">Session terminée</div>
+    <div class="results-score-big" id="res-score">0</div>
+    <div class="results-max" id="res-max">/ 0 pts max</div>
+    <div class="results-grade" id="res-grade"></div>
+  </div>
+  <div class="results-body">
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-val" id="res-correct">0</div><div class="stat-lbl">✅ Correctes</div></div>
+      <div class="stat-card"><div class="stat-val" id="res-partial">0</div><div class="stat-lbl">⚡ Partielles</div></div>
+      <div class="stat-card"><div class="stat-val" id="res-wrong">0</div><div class="stat-lbl">❌ Incorrectes</div></div>
+    </div>
+    <div class="section-title">Détail des réponses</div>
+    <div class="review-list" id="review-list"></div>
+    <button class="btn-restart" onclick="restartSame()">🔁 Recommencer les mêmes matières</button>
+    <button class="btn-home" onclick="goHome()">← Choisir d'autres matières</button>
+  </div>
+</div>
+
+</div>
+<!-- Firebase SDK -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+import { getDatabase, ref, get, set, onValue, update, remove, serverTimestamp, onDisconnect } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCBcQZgzgThvscz5WhBH-IlC0OGJdltjfQ",
+  authDomain: "grand-test-27c08.firebaseapp.com",
+  databaseURL: "https://grand-test-27c08-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "grand-test-27c08",
+  storageBucket: "grand-test-27c08.firebasestorage.app",
+  messagingSenderId: "1015079167771",
+  appId: "1:1015079167771:web:2e656024e7569dc2cc55be"
+};
+
+const fbApp = initializeApp(firebaseConfig);
+const fbDB = getDatabase(fbApp);
+
+// Expose Firebase helpers to the main (non-module) script
+window.__fb = {
+  db: fbDB,
+  ref: (path) => ref(fbDB, path),
+  get, set, onValue, update, remove, serverTimestamp, onDisconnect
+};
+window.dispatchEvent(new Event('firebase-ready'));
+</script>
+
+<script>
+/* ================================================================
+   AUTH & SESSION MANAGEMENT (Firebase Realtime Database)
+   ================================================================ */
+const ADMIN_EMAIL = "lutintheo9@gmail.com";
+const ADMIN_PASS_HASH = "188bce3868795c7c0c9e891507e2a19a6a5d65ca2556afd4889330a1caae51d7";
+
+let currentUser = null;      // { email, isAdmin }
+let deviceId = null;          // unique ID for this tab/device
+let sessionWatcher = null;    // Firebase onValue unsubscribe
+let emailListWatcher = null;
+let sessionsWatcher = null;
+let authReady = false;
+
+// Generate / retrieve a stable device ID for this browser
+function getDeviceId(){
+  let id = localStorage.getItem('gt_device_id');
+  if(!id){
+    id = 'dev_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 10);
+    localStorage.setItem('gt_device_id', id);
+  }
+  return id;
+}
+
+// SHA-256 hash using Web Crypto API
+async function sha256(text){
+  const buf = new TextEncoder().encode(text);
+  const hash = await crypto.subtle.digest('SHA-256', buf);
+  return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// Normalize email for keys (Firebase keys cannot contain .#$[]/)
+function emailKey(email){
+  return email.toLowerCase().trim().replace(/\./g, ',');
+}
+function unKeyEmail(key){
+  return key.replace(/,/g, '.');
+}
+
+// Wait for Firebase to be ready
+function onFirebaseReady(cb){
+  if(window.__fb) cb();
+  else window.addEventListener('firebase-ready', cb, { once: true });
+}
+
+/* -------- INITIALIZATION -------- */
+onFirebaseReady(async () => {
+  deviceId = getDeviceId();
+  authReady = true;
+
+  // Ensure admin email is pre-authorized in the database on first boot
+  try {
+    const adminKey = emailKey(ADMIN_EMAIL);
+    const snap = await window.__fb.get(window.__fb.ref('authorized_emails/' + adminKey));
+    if(!snap.exists()){
+      await window.__fb.set(window.__fb.ref('authorized_emails/' + adminKey), {
+        email: ADMIN_EMAIL.toLowerCase(),
+        addedAt: Date.now(),
+        addedBy: 'system'
+      });
+    }
+  } catch(e){
+    console.warn('Init admin email:', e);
+  }
+
+  // Check if user was previously logged in (persist via localStorage)
+  const savedEmail = localStorage.getItem('gt_session_email');
+  const savedIsAdmin = localStorage.getItem('gt_session_admin') === '1';
+
+  if(savedEmail){
+    // Verify session is still valid on server
+    try {
+      const k = emailKey(savedEmail);
+      const sessSnap = await window.__fb.get(window.__fb.ref('active_sessions/' + k));
+      if(sessSnap.exists() && sessSnap.val().deviceId === deviceId){
+        // Still our session
+        currentUser = { email: savedEmail, isAdmin: savedIsAdmin };
+        startSessionWatcher();
+        showAppLoggedIn();
+      } else {
+        // Session invalidated
+        clearLocalSession();
+        showLoginScreen();
+      }
+    } catch(e){
+      console.error('Session verify failed:', e);
+      clearLocalSession();
+      showLoginScreen();
+    }
+  } else {
+    showLoginScreen();
+  }
+});
+
+function clearLocalSession(){
+  localStorage.removeItem('gt_session_email');
+  localStorage.removeItem('gt_session_admin');
+  currentUser = null;
+}
+
+function showLoginScreen(){
+  document.getElementById('auth-loading').style.display = 'none';
+  document.body.classList.add('auth-bg');
+  document.getElementById('app').classList.add('auth-mode');
+  document.getElementById('user-bar').style.display = 'none';
+  hideAllScreens();
+  const sc = document.getElementById('screen-login');
+  sc.style.display = 'block';
+  sc.classList.add('active');
+}
+
+function showAppLoggedIn(){
+  document.getElementById('auth-loading').style.display = 'none';
+  document.body.classList.remove('auth-bg');
+  document.getElementById('app').classList.remove('auth-mode');
+  document.getElementById('screen-login').style.display = 'none';
+  document.getElementById('screen-login').classList.remove('active');
+
+  // User bar
+  document.getElementById('user-bar').style.display = 'flex';
+  document.getElementById('user-bar-email').textContent = currentUser.email;
+  document.getElementById('user-bar-admin').style.display = currentUser.isAdmin ? 'inline-block' : 'none';
+
+  if(currentUser.isAdmin){
+    // Admin goes to admin screen by default; can switch to app via button
+    showAdminScreen();
+  } else {
+    // Regular user goes to home
+    hideAllScreens();
+    document.getElementById('screen-home').classList.add('active');
+  }
+}
+
+function adminGoToApp(){
+  if(!currentUser || !currentUser.isAdmin) return;
+  hideAllScreens();
+  document.getElementById('screen-home').classList.add('active');
+}
+
+function hideAllScreens(){
+  document.querySelectorAll('.screen').forEach(s => {
+    s.classList.remove('active');
+    if(s.id === 'screen-login' || s.id === 'screen-admin') s.style.display = 'none';
+  });
+}
+
+/* -------- AUTH TABS -------- */
+function switchAuthTab(which){
+  document.getElementById('tab-user').classList.toggle('active', which === 'user');
+  document.getElementById('tab-admin').classList.toggle('active', which === 'admin');
+  document.getElementById('form-user').style.display = which === 'user' ? 'block' : 'none';
+  document.getElementById('form-admin').style.display = which === 'admin' ? 'block' : 'none';
+  document.getElementById('err-user').classList.remove('visible');
+  document.getElementById('err-admin').classList.remove('visible');
+}
+
+function showErr(which, msg){
+  const el = document.getElementById('err-' + which);
+  el.textContent = msg;
+  el.classList.add('visible');
+}
+
+function setBtnLoading(btnId, loading){
+  const btn = document.getElementById(btnId);
+  if(loading){
+    btn.disabled = true;
+    btn.dataset.origText = btn.textContent;
+    btn.innerHTML = '<span class="auth-loading"></span>Connexion…';
+  } else {
+    btn.disabled = false;
+    btn.textContent = btn.dataset.origText || btn.textContent;
+  }
+}
+
+/* -------- USER LOGIN -------- */
+async function loginUser(){
+  const emailEl = document.getElementById('login-email');
+  const email = emailEl.value.trim().toLowerCase();
+  document.getElementById('err-user').classList.remove('visible');
+
+  if(!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
+    showErr('user', 'Adresse email invalide.');
+    return;
+  }
+
+  setBtnLoading('btn-login-user', true);
+
+  try {
+    const key = emailKey(email);
+    // 1. Check authorization
+    const authSnap = await window.__fb.get(window.__fb.ref('authorized_emails/' + key));
+    if(!authSnap.exists()){
+      setBtnLoading('btn-login-user', false);
+      showErr('user', '❌ Cet email n\'est pas autorisé. Contacte l\'administrateur.');
+      return;
+    }
+
+    // 2. Check if session exists elsewhere
+    const sessSnap = await window.__fb.get(window.__fb.ref('active_sessions/' + key));
+    if(sessSnap.exists() && sessSnap.val().deviceId !== deviceId){
+      // Another device is connected → show warning but proceed (will kick the other device)
+      if(!confirm('⚠️ Cet email est déjà connecté sur un autre appareil.\n\nSi tu continues, l\'autre appareil sera automatiquement déconnecté.\n\nContinuer ?')){
+        setBtnLoading('btn-login-user', false);
+        return;
+      }
+    }
+
+    // 3. Register session (overwrites any existing session → kicks other device)
+    await window.__fb.set(window.__fb.ref('active_sessions/' + key), {
+      deviceId: deviceId,
+      email: email,
+      loggedAt: Date.now(),
+      userAgent: navigator.userAgent.substring(0, 150)
+    });
+
+    // 4. Save local session + go in
+    const isAdmin = (email === ADMIN_EMAIL.toLowerCase());
+    localStorage.setItem('gt_session_email', email);
+    localStorage.setItem('gt_session_admin', isAdmin ? '1' : '0');
+    currentUser = { email, isAdmin };
+    startSessionWatcher();
+    showAppLoggedIn();
+  } catch(e){
+    console.error(e);
+    setBtnLoading('btn-login-user', false);
+    showErr('user', 'Erreur de connexion au serveur. Vérifie ta connexion internet.');
+  }
+}
+
+/* -------- ADMIN LOGIN -------- */
+async function loginAdmin(){
+  const email = document.getElementById('admin-email').value.trim().toLowerCase();
+  const pass = document.getElementById('admin-pass').value;
+  document.getElementById('err-admin').classList.remove('visible');
+
+  if(!email || !pass){
+    showErr('admin', 'Email et mot de passe requis.');
+    return;
+  }
+
+  setBtnLoading('btn-login-admin', true);
+
+  if(email !== ADMIN_EMAIL.toLowerCase()){
+    setTimeout(() => {
+      setBtnLoading('btn-login-admin', false);
+      showErr('admin', '❌ Identifiants incorrects.');
+    }, 600);
+    return;
+  }
+
+  try {
+    const hash = await sha256(pass);
+    if(hash !== ADMIN_PASS_HASH){
+      setBtnLoading('btn-login-admin', false);
+      showErr('admin', '❌ Identifiants incorrects.');
+      return;
+    }
+
+    // Admin passes → register session like a normal user (to enforce 1-device also for admin)
+    const key = emailKey(email);
+    const sessSnap = await window.__fb.get(window.__fb.ref('active_sessions/' + key));
+    if(sessSnap.exists() && sessSnap.val().deviceId !== deviceId){
+      if(!confirm('⚠️ Cet email admin est déjà connecté sur un autre appareil.\n\nContinuer déconnectera l\'autre appareil.\n\nContinuer ?')){
+        setBtnLoading('btn-login-admin', false);
+        return;
+      }
+    }
+    await window.__fb.set(window.__fb.ref('active_sessions/' + key), {
+      deviceId: deviceId,
+      email: email,
+      loggedAt: Date.now(),
+      isAdmin: true,
+      userAgent: navigator.userAgent.substring(0, 150)
+    });
+
+    localStorage.setItem('gt_session_email', email);
+    localStorage.setItem('gt_session_admin', '1');
+    currentUser = { email, isAdmin: true };
+    startSessionWatcher();
+    showAppLoggedIn();
+  } catch(e){
+    console.error(e);
+    setBtnLoading('btn-login-admin', false);
+    showErr('admin', 'Erreur de connexion au serveur.');
+  }
+}
+
+/* -------- SESSION WATCHER (detect kick from another device) -------- */
+function startSessionWatcher(){
+  stopSessionWatcher();
+  if(!currentUser) return;
+  const k = emailKey(currentUser.email);
+  sessionWatcher = window.__fb.onValue(
+    window.__fb.ref('active_sessions/' + k),
+    (snap) => {
+      if(!snap.exists() || snap.val().deviceId !== deviceId){
+        // We got kicked
+        handleSessionKicked();
+      }
+    }
+  );
+}
+
+function stopSessionWatcher(){
+  if(sessionWatcher){ try { sessionWatcher(); } catch(e){} sessionWatcher = null; }
+  if(emailListWatcher){ try { emailListWatcher(); } catch(e){} emailListWatcher = null; }
+  if(sessionsWatcher){ try { sessionsWatcher(); } catch(e){} sessionsWatcher = null; }
+}
+
+function handleSessionKicked(){
+  stopSessionWatcher();
+  clearLocalSession();
+  // Stop any running timers from the quiz
+  try { clearInterval(timerInterval); } catch(e){}
+  try { clearInterval(qTimerInterval); } catch(e){}
+  // Show conflict modal
+  document.getElementById('conflict-overlay').style.display = 'flex';
+}
+
+/* -------- LOGOUT -------- */
+async function logout(){
+  if(!currentUser){ location.reload(); return; }
+  try {
+    const k = emailKey(currentUser.email);
+    // Only remove if it's still OUR session
+    const snap = await window.__fb.get(window.__fb.ref('active_sessions/' + k));
+    if(snap.exists() && snap.val().deviceId === deviceId){
+      await window.__fb.remove(window.__fb.ref('active_sessions/' + k));
+    }
+  } catch(e){ console.warn('logout cleanup:', e); }
+  stopSessionWatcher();
+  clearLocalSession();
+  location.reload();
+}
+
+/* -------- ADMIN SCREEN -------- */
+function goAdmin(){
+  if(!currentUser || !currentUser.isAdmin) return;
+  showAdminScreen();
+}
+
+function showAdminScreen(){
+  hideAllScreens();
+  const sc = document.getElementById('screen-admin');
+  sc.style.display = 'block';
+  sc.classList.add('active');
+  loadAdminData();
+}
+
+function loadAdminData(){
+  // Subscribe to emails list (live)
+  if(emailListWatcher){ try { emailListWatcher(); } catch(e){} }
+  emailListWatcher = window.__fb.onValue(
+    window.__fb.ref('authorized_emails'),
+    (snap) => {
+      const data = snap.val() || {};
+      renderEmailList(data);
+    }
+  );
+
+  // Subscribe to sessions (live)
+  if(sessionsWatcher){ try { sessionsWatcher(); } catch(e){} }
+  sessionsWatcher = window.__fb.onValue(
+    window.__fb.ref('active_sessions'),
+    (snap) => {
+      window.__adminSessions = snap.val() || {};
+      renderEmailList(window.__lastEmailData || {});
+      document.getElementById('stat-active').textContent = Object.keys(window.__adminSessions).length;
+    }
+  );
+}
+
+function renderEmailList(data){
+  window.__lastEmailData = data;
+  const sessions = window.__adminSessions || {};
+  const container = document.getElementById('admin-email-list');
+  const keys = Object.keys(data);
+  document.getElementById('stat-emails').textContent = keys.length;
+
+  if(keys.length === 0){
+    container.innerHTML = '<div class="admin-empty">Aucun email autorisé. Ajoute-en un ci-dessus.</div>';
+    return;
+  }
+
+  // Sort: admin first, then alphabetical
+  keys.sort((a, b) => {
+    const ea = unKeyEmail(a), eb = unKeyEmail(b);
+    if(ea === ADMIN_EMAIL.toLowerCase()) return -1;
+    if(eb === ADMIN_EMAIL.toLowerCase()) return 1;
+    return ea.localeCompare(eb);
+  });
+
+  container.innerHTML = keys.map(k => {
+    const info = data[k];
+    const email = info.email || unKeyEmail(k);
+    const isAdmin = email === ADMIN_EMAIL.toLowerCase();
+    const isActive = !!sessions[k];
+    const addedDate = info.addedAt ? new Date(info.addedAt).toLocaleDateString('fr-FR') : '—';
+
+    let badges = '';
+    if(isAdmin) badges += '<span class="admin-email-badge badge-admin">Admin</span>';
+    badges += isActive
+      ? '<span class="admin-email-badge badge-active">🟢 Connecté</span>'
+      : '<span class="admin-email-badge badge-inactive">Hors ligne</span>';
+
+    const kickBtn = isActive
+      ? `<button class="admin-btn-icon kick" title="Déconnecter cet utilisateur" onclick="adminKickUser('${k}')">🚪</button>`
+      : '';
+    const delBtn = isAdmin
+      ? ''
+      : `<button class="admin-btn-icon" title="Supprimer cet email" onclick="adminRemoveEmail('${k}','${email.replace(/'/g, "\\'")}')">🗑️</button>`;
+
+    return `<div class="admin-email-row">
+      <div class="admin-email-info">
+        <div class="admin-email-addr">${email}</div>
+        <div class="admin-email-meta">${badges}<span>Ajouté le ${addedDate}</span></div>
+      </div>
+      <div class="admin-email-actions">${kickBtn}${delBtn}</div>
+    </div>`;
+  }).join('');
+}
+
+async function adminAddEmail(){
+  const input = document.getElementById('new-email');
+  const email = input.value.trim().toLowerCase();
+  if(!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
+    showToast('Email invalide', 'error');
+    return;
+  }
+  try {
+    const k = emailKey(email);
+    const snap = await window.__fb.get(window.__fb.ref('authorized_emails/' + k));
+    if(snap.exists()){
+      showToast('Cet email est déjà autorisé', 'error');
+      return;
+    }
+    await window.__fb.set(window.__fb.ref('authorized_emails/' + k), {
+      email: email,
+      addedAt: Date.now(),
+      addedBy: currentUser.email
+    });
+    input.value = '';
+    showToast('✅ Email ajouté', 'success');
+  } catch(e){
+    console.error(e);
+    showToast('Erreur d\'ajout', 'error');
+  }
+}
+
+async function adminRemoveEmail(key, email){
+  if(email === ADMIN_EMAIL.toLowerCase()){
+    showToast('Impossible de supprimer l\'email admin', 'error');
+    return;
+  }
+  if(!confirm('Supprimer l\'email "' + email + '" ?\n\nL\'utilisateur sera déconnecté s\'il est en ligne.')) return;
+  try {
+    await window.__fb.remove(window.__fb.ref('authorized_emails/' + key));
+    // Also kick any active session
+    await window.__fb.remove(window.__fb.ref('active_sessions/' + key));
+    showToast('✅ Email supprimé', 'success');
+  } catch(e){
+    console.error(e);
+    showToast('Erreur de suppression', 'error');
+  }
+}
+
+async function adminKickUser(key){
+  const email = unKeyEmail(key);
+  if(!confirm('Déconnecter l\'utilisateur "' + email + '" ?')) return;
+  try {
+    await window.__fb.remove(window.__fb.ref('active_sessions/' + key));
+    showToast('✅ Utilisateur déconnecté', 'success');
+  } catch(e){
+    console.error(e);
+    showToast('Erreur', 'error');
+  }
+}
+
+function showToast(msg, type){
+  const t = document.createElement('div');
+  t.className = 'admin-toast ' + (type || '');
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2500);
+}
+
+/* Allow pressing Enter on inputs */
+document.addEventListener('DOMContentLoaded', () => {
+  const le = document.getElementById('login-email');
+  if(le) le.addEventListener('keypress', e => { if(e.key === 'Enter') loginUser(); });
+  const ae = document.getElementById('admin-email');
+  if(ae) ae.addEventListener('keypress', e => { if(e.key === 'Enter') document.getElementById('admin-pass').focus(); });
+  const ap = document.getElementById('admin-pass');
+  if(ap) ap.addEventListener('keypress', e => { if(e.key === 'Enter') loginAdmin(); });
+  const ne = document.getElementById('new-email');
+  if(ne) ne.addEventListener('keypress', e => { if(e.key === 'Enter') adminAddEmail(); });
+});
+
+/* Timeout failsafe: if Firebase doesn't respond within 8s, show login with error */
+setTimeout(() => {
+  if(!authReady){
+    document.getElementById('auth-loading-text').innerHTML =
+      '⚠️ Impossible de joindre le serveur.<br>Vérifie ta connexion internet puis rafraîchis la page.';
+  }
+}, 8000);
+
+/* ================================================================
+   ORIGINAL APP (unchanged)
+   ================================================================ */
+const SUBJECTS=[
+  {id:'apt2',name:'Academic & Professional Toolbox II',code:'4044',lang:'fr'},
+  {id:'axl',name:'Advanced Excel',code:'1803',lang:'en'},
+  {id:'atps',name:'Algorithmic Thinking & Programming',code:'3298',lang:'en'},
+  {id:'bex',name:'Business Exploration',code:'1720',lang:'fr'},
+  {id:'cbur',name:'Compétences Bureautiques',code:'1796',lang:'fr'},
+  {id:'clog',name:'Computing Logic',code:'4042',lang:'en'},
+  {id:'crea',name:'Créativité',code:'1809',lang:'fr'},
+  {id:'div',name:'Diversité',code:'1811',lang:'fr'},
+  {id:'ebs1',name:'English for Business S1',code:'1728',lang:'en'},
+  {id:'ebs2',name:'English for Business S2',code:'1731',lang:'en'},
+  {id:'eeco',name:'Environnement Économique',code:'1721',lang:'fr'},
+  {id:'ejur',name:'Environnement Juridique S1',code:'1722',lang:'fr'},
+  {id:'esp1',name:'Espagnol Niveau 3 S1',code:'3402',lang:'fr'},
+  {id:'esp2',name:'Espagnol Niveau 3 S2',code:'3417',lang:'fr'},
+  {id:'faf',name:'Financial Accounting Fundamentals',code:'3299',lang:'en'},
+  {id:'ghist',name:'Global History',code:'1732',lang:'en'},
+  {id:'istat',name:'Inferential Statistics',code:'4043',lang:'en'},
+  {id:'iwd',name:'Intro to Web Development',code:'1810',lang:'en'},
+  {id:'mqm',name:'Méthodes Quantitatives et Maths',code:'1726',lang:'fr'},
+  {id:'pdc',name:'Processus de Décision Consommateur',code:'1725',lang:'fr'},
+  {id:'pm',name:'Project Management',code:'1807',lang:'en'},
+  {id:'qmef',name:'Quantitative Methods Eco & Finance',code:'3297',lang:'en'},
+  {id:'rmat',name:'Renforcement en Mathématiques',code:'4300',lang:'fr'},
+  {id:'rjur',name:'Responsabilité Juridique',code:'1808',lang:'fr'},
+  {id:'rfbs',name:'Robust & Fake Stats in Business',code:'3525',lang:'en'},
+  {id:'socio',name:'Sociologie',code:'1727',lang:'fr'},
+  {id:'actu',name:"Questions d'actualité",code:'—',lang:'fr'},
+  {id:'livre',name:'IA — La plus grande mutation (Kaï-Fu Lee)',code:'—',lang:'fr'},
+];
+
+const QUESTIONS=[
+  // ── SOCIOLOGIE — Séance 1 : Introduction ──
+  {subj:'socio',pts:1,q:"La sociologie du travail a notamment pour objet :",choices:["A. L'étude des marchés financiers et de la Bourse","B. L'organisation du travail, ses conditions d'exercice et les relations sociales dans le cadre du travail","C. L'analyse des politiques fiscales des États","D. L'étude exclusive des conflits entre patrons et syndicats","E. Aucune des réponses proposées n'est juste"],correct:[1],expl:"La sociologie du travail étudie l'organisation du travail et son évolution, ses conditions d'exercice, les groupes sociaux et les relations sociales qui s'y instaurent."},
+  {subj:'socio',pts:1,q:"Parmi les trois fondateurs de la sociologie générale, lequel considère que la division du travail joue un rôle fondamental comme facteur de cohésion sociale ?",choices:["A. Karl Marx","B. Max Weber","C. Émile Durkheim","D. Auguste Comte","E. Aucune des réponses proposées n'est juste"],correct:[2],expl:"C'est Durkheim qui voit dans la division du travail un facteur de cohésion sociale. Marx y voit une dynamique conflictuelle, Weber s'intéresse à l'esprit du capitalisme."},
+  {subj:'socio',pts:2,q:"Quelle est la différence principale entre une étude quantitative et une étude qualitative en sociologie ?",choices:["A. L'étude quantitative utilise des données chiffrées et des statistiques ; l'étude qualitative recueille des éléments non directement chiffrables via entretiens ou observations","B. L'étude quantitative est plus fiable que l'étude qualitative","C. L'étude qualitative utilise exclusivement des sondages en ligne","D. L'étude quantitative est réservée aux économistes","E. Aucune des réponses proposées n'est juste"],correct:[0],expl:"L'étude quantitative produit des données chiffrables et statistiques. L'étude qualitative (entretiens, focus groups, observations) vise à comprendre en profondeur attitudes et comportements."},
+  {subj:'socio',pts:1,q:"Quelle méthode sociologique consiste à s'intégrer dans un groupe étudié pour observer de l'intérieur ?",choices:["A. Le sondage","B. L'entretien semi-directif","C. L'observation participante","D. L'expérimentation en laboratoire","E. Aucune des réponses proposées n'est juste"],correct:[2],expl:"L'observation participante consiste à s'immerger dans le groupe étudié pour recueillir des informations de l'intérieur, sans contrôler les variables."},
+
+  // ── SOCIOLOGIE — Séance 2 : Marx et Weber ──
+  {subj:'socio',pts:1,q:"Selon Max Weber, quels sont les trois types de pouvoir (légitimité de l'autorité) ?",choices:["A. Pouvoir économique, pouvoir politique, pouvoir militaire","B. Pouvoir traditionnel, pouvoir charismatique, pouvoir rationnel légal","C. Pouvoir formel, pouvoir informel, pouvoir délégué","D. Pouvoir absolu, pouvoir constitutionnel, pouvoir parlementaire","E. Aucune des réponses proposées n'est juste"],correct:[1],expl:"Weber distingue le pouvoir traditionnel (héritage, coutume), le pouvoir charismatique (charisme personnel) et le pouvoir rationnel légal (règles impersonnelles, bureaucratie)."},
+  {subj:'socio',pts:2,q:"Le modèle bureaucratique selon Weber repose sur plusieurs principes. Lesquels font partie de ses 6 principes fondamentaux ?",choices:["A. Division du travail","B. Structure hiérarchique","C. Profit maximal pour l'actionnaire","D. Caractère impersonnel des relations","E. Aucune des réponses proposées n'est juste"],correct:[0,1,3],expl:"Weber regroupe ses hypothèses en 6 principes : division du travail, structure hiérarchique, sélection du personnel, règles normalisées, caractère impersonnel des relations, avancement. Le profit n'en fait pas partie."},
+  {subj:'socio',pts:1,q:"Selon Marx, qu'est-ce que la 'classe sociale en soi' ?",choices:["A. Un groupe d'individus ayant pris conscience de leur appartenance de classe et agissant collectivement","B. Des individus placés dans une situation économique identique, sans conscience de classe partagée","C. La classe dirigeante qui contrôle les moyens de production","D. Un groupe défini par ses valeurs culturelles communes","E. Aucune des réponses proposées n'est juste"],correct:[1],expl:"La classe 'en soi' désigne des individus dans une même situation objective. La classe 'pour soi' apparaît quand ils prennent conscience de cette situation et agissent collectivement."},
+  {subj:'socio',pts:2,q:"La théorie de l'aliénation de Marx décrit :",choices:["A. La perte d'humanité du travailleur séparé de ses outils et du produit de son travail","B. Le fait que le salarié ne décide pas comment il doit travailler","C. Un phénomène propre aux sociétés primitives uniquement","D. La satisfaction que ressent le travailleur dans le capitalisme industriel","E. Aucune des réponses proposées n'est juste"],correct:[0,1],expl:"L'aliénation selon Marx : le travailleur est séparé brutalement de ses outils, ne décide pas comment travailler, et le produit de son travail lui échappe comme valeur d'usage."},
+  {subj:'socio',pts:3,q:"Parmi ces affirmations sur les classes sociales selon Marx, lesquelles sont exactes ?",choices:["A. Les classes sociales sont définies par la propriété des moyens de production","B. La lutte de classes doit amener à une transformation de la société vers l'égalité","C. Marx considère que les classes sociales sont immuables et permanentes","D. Les intérêts antagonistes entre classes sont un critère fondamental de la définition marxiste","E. Aucune des réponses proposées n'est juste"],correct:[0,1,3],expl:"Pour Marx : les classes sont définies par la propriété des moyens de production et des intérêts antagonistes (A et D). La lutte de classes doit mener à une société égalitaire (B). Marx ne les considère pas immuables (C est faux)."},
+  {subj:'socio',pts:2,q:"Selon Weber, pourquoi le pouvoir rationnel légal (bureaucratique) est-il considéré comme le modèle de référence du XXe siècle ?",choices:["A. Parce qu'il repose sur des lois et règles impersonnelles, garantissant une organisation stable et prévisible","B. Parce qu'il permet au chef charismatique d'exercer son autorité sans limite","C. Parce qu'il favorise le profit à court terme des actionnaires","D. Parce qu'il élimine toute hiérarchie dans l'entreprise","E. Aucune des réponses proposées n'est juste"],correct:[0],expl:"Le pouvoir rationnel légal repose sur des règles impersonnelles et la soumission à des expertises codifiées, ce qui en fait un modèle de progrès et d'organisation stable au XXe siècle."},
+
+  // ── SOCIOLOGIE — Séance 3 : Durkheim, mondialisation ──
+  {subj:'socio',pts:1,q:"Selon Durkheim, quelle forme de solidarité caractérise les sociétés traditionnelles (agricoles) ?",choices:["A. Solidarité organique","B. Solidarité mécanique","C. Solidarité contractuelle","D. Solidarité communautaire","E. Aucune des réponses proposées n'est juste"],correct:[1],expl:"Les sociétés traditionnelles sont caractérisées par une faible division du travail et une forte conscience collective fondée sur les ressemblances : c'est la solidarité mécanique."},
+  {subj:'socio',pts:2,q:"La solidarité organique selon Durkheim est liée à :",choices:["A. La ressemblance entre les individus et le travail identique","B. La complémentarité et l'interdépendance des individus dans les sociétés modernes","C. L'absence de division du travail dans les sociétés industrielles","D. La domination d'une classe sur une autre","E. Aucune des réponses proposées n'est juste"],correct:[1],expl:"Dans les sociétés modernes, la forte division du travail crée une interdépendance entre individus aux fonctions complémentaires : c'est la solidarité organique."},
+  {subj:'socio',pts:2,q:"Selon Durkheim, qu'est-ce qui risque de provoquer des 'pathologies' de la solidarité organique dans les sociétés modernes ?",choices:["A. La maximisation du profit qui fragmente les liens de solidarité","B. Une spécialisation trop élevée qui confine l'individu à des tâches limitées et répétitives","C. L'absence totale de division du travail","D. La trop grande homogénéité culturelle des travailleurs","E. Aucune des réponses proposées n'est juste"],correct:[0,1],expl:"Durkheim identifie deux pathologies : la maximisation du profit qui fragmente les liens sociaux, et une spécialisation excessive qui réduit l'individu à des tâches répétitives."},
+  {subj:'socio',pts:3,q:"Concernant la mondialisation et ses effets sur le travail, quelles affirmations sont correctes ?",choices:["A. La mondialisation trouve ses origines dans le colonialisme","B. Elle a permis d'augmenter la richesse des pays développés tout en creusant les inégalités avec les pays du Tiers-Monde","C. Elle a éliminé totalement le travail informel et le travail des enfants","D. Les multinationales sont parfois impliquées dans l'exploitation incontrôlée des travailleurs","E. Aucune des réponses proposées n'est juste"],correct:[0,1,3],expl:"La mondialisation a des origines coloniales (A), a enrichi les pays développés tout en creusant les inégalités (B). Le travail informel et des enfants subsiste massivement — 160 millions d'enfants selon l'UNICEF (C est faux). Les multinationales sont parfois impliquées dans l'exploitation (D)."},
+  {subj:'socio',pts:2,q:"Dans la relation de travail contemporaine, l'apparition du 'client' comme nouvel acteur implique :",choices:["A. Que la satisfaction du client devient un critère d'évaluation du travail","B. Que le travailleur doit enrôler toute sa personnalité (sourire, écouter, séduire)","C. Que les tensions avec les clients ont complètement disparu grâce au numérique","D. Que la maîtrise des émotions est de plus en plus déterminante dans le travail","E. Aucune des réponses proposées n'est juste"],correct:[0,1,3],expl:"Le client au centre implique que sa satisfaction est un critère d'évaluation (A), que le travailleur mobilise toute sa personnalité (B), et que la gestion des émotions devient cruciale (D). Les tensions avec les clients existent toujours (C est faux)."},
+
+  // ── SOCIOLOGIE — Séance 4 : Plateformisation ──
+  {subj:'socio',pts:1,q:"Parmi ces plateformes numériques, laquelle fonctionne sur un modèle de particulier à particulier (P2P) ?",choices:["A. Uber","B. Deliveroo","C. BlaBlaCar","D. Amazon","E. Aucune des réponses proposées n'est juste"],correct:[2],expl:"BlaBlaCar fonctionne sur un modèle P2P (particulier à particulier). Uber est B2C (entreprise à consommateur)."},
+  {subj:'socio',pts:2,q:"Le micro-travail, apparu vers le milieu des années 2000, se caractérise par :",choices:["A. Des missions ne demandant aucune qualification, répétitives et rapides","B. Un contournement du droit social sur le temps de travail et les rémunérations","C. Un fort lien avec l'intelligence artificielle","D. Des rémunérations élevées compensant la flexibilité","E. Aucune des réponses proposées n'est juste"],correct:[0,1,2],expl:"Le micro-travail : missions sans qualification, répétitives et rapides (A), contournement du droit social (B), et lien fort avec l'IA (C). Les rémunérations sont très faibles — environ 21€/mois en France en moyenne (D est faux)."},
+  {subj:'socio',pts:3,q:"Parmi ces affirmations sur la plateformisation de l'économie, lesquelles sont exactes ?",choices:["A. Les plateformes remettent en question des notions comme la relation à l'employeur, la protection et la rémunération","B. La crise du Covid-19 a mis en lumière la faible protection des chauffeurs VTC et livreurs","C. Les travailleurs des plateformes bénéficient des mêmes droits sociaux que les salariés classiques","D. Les critères classiques du monde du travail (formation, expérience, engagements) deviennent inopérants sur les plateformes","E. Aucune des réponses proposées n'est juste"],correct:[0,1,3],expl:"Les plateformes bouleversent les notions classiques du travail (A et D). Le Covid a révélé leur faible protection (B). Mais les travailleurs des plateformes ne sont pas salariés et n'ont pas les mêmes droits sociaux (C est faux)."},
+  {subj:'socio',pts:1,q:"Qu'est-ce que l'ubérisation ?",choices:["A. La transformation d'un secteur économique par une plateforme numérique remettant en cause les modèles traditionnels","B. La nationalisation d'une entreprise de transport","C. Un modèle de production industrielle basé sur le travail à la chaîne","D. Une politique fiscale favorable aux start-ups","E. Aucune des réponses proposées n'est juste"],correct:[0],expl:"L'ubérisation désigne la disruption d'un secteur par une plateforme numérique, souvent en contournant les règles du droit social et en proposant une relation de travail atypique."},
+
+  // ── SOCIOLOGIE — Séance 5 : Taylorisme, autonomie et contrainte ──
+  {subj:'socio',pts:1,q:"Comment définit-on le taylorisme ?",choices:["A. La mobilisation de la 'science' au service de l'organisation du travail","B. Un modèle de gestion financière des grandes entreprises","C. Une théorie politique de redistribution des richesses","D. Un mode de production artisanal valorisant les savoir-faire traditionnels","E. Aucune des réponses proposées n'est juste"],correct:[0],expl:"Le taylorisme est la mobilisation de la science pour organiser le travail de la manière la plus efficace possible, avec une double division du travail horizontale et verticale."},
+  {subj:'socio',pts:2,q:"La double division du travail selon Taylor comprend :",choices:["A. La division horizontale : chaque ouvrier a la charge exclusive d'une courte opération","B. La division verticale : définition scientifique des tâches pour obtenir la meilleure performance","C. La division sociale entre classes selon Marx","D. La division entre travail de bureau et travail manuel","E. Aucune des réponses proposées n'est juste"],correct:[0,1],expl:"Taylor impose une double division : horizontale (chaque ouvrier fait une courte opération unique) et verticale (séparation entre conception et exécution des tâches)."},
+  {subj:'socio',pts:2,q:"Le toyotisme, comme réponse à la crise du taylorisme, repose sur les '5 zéros'. Lesquels ?",choices:["A. Zéro stock","B. Zéro défaut","C. Zéro salarié","D. Zéro délai","E. Aucune des réponses proposées n'est juste"],correct:[0,1,3],expl:"Les 5 zéros du toyotisme sont : 0 stock, 0 défaut, 0 papier, 0 panne, 0 délai. Le 'zéro salarié' n'en fait pas partie."},
+  {subj:'socio',pts:3,q:"Parmi ces affirmations sur les risques psychosociaux au travail, lesquelles sont correctes ?",choices:["A. Les injonctions contradictoires (faire du chiffre et de la qualité en même temps) sont une source de souffrance","B. Le stress s'est imposé comme le nouveau mal du travail, produit de l'alliance entre contraintes et autonomie difficile à assumer","C. La réforme organisationnelle permanente et la mobilité forcée sont des facteurs de risque","D. Le taylorisme a complètement disparu des organisations modernes","E. Aucune des réponses proposées n'est juste"],correct:[0,1,2],expl:"Les injonctions contradictoires (A), le stress lié aux contraintes et à l'autonomie (B), et les réformes permanentes/mobilité forcée (C) sont des facteurs de risques psychosociaux. Le taylorisme n'a pas disparu — il s'est durci (D est faux)."},
+  {subj:'socio',pts:1,q:"Qu'est-ce que le modèle toyotiste du 'juste-à-temps' (Just-in-Time) ?",choices:["A. Produire uniquement quand il y a une commande, pour réduire les stocks","B. Produire en avance pour constituer des stocks importants","C. Standardiser les pièces pour les assembler à la demande","D. Délocaliser la production dans les pays à bas coûts","E. Aucune des réponses proposées n'est juste"],correct:[0],expl:"Le juste-à-temps toyotiste consiste à produire uniquement en réponse à une commande, éliminant les stocks inutiles et réduisant les gaspillages."},
+
+  // ── SOCIOLOGIE — Séance 6 : Bauman & Maslow ──
+  {subj:'socio',pts:1,q:"Selon Maslow, combien de niveaux de besoins la pyramide comporte-t-elle ?",choices:["A. 3","B. 4","C. 5","D. 7","E. Aucune des réponses proposées n'est juste"],correct:[2],expl:"La pyramide de Maslow comprend 5 niveaux : besoins physiologiques, sécurité, appartenance, estime, et auto-accomplissement."},
+  {subj:'socio',pts:2,q:"Parmi ces besoins, lesquels appartiennent à la pyramide de Maslow ?",choices:["A. Besoins physiologiques (manger, dormir, se reproduire)","B. Besoins de sécurité (logement, revenus stables)","C. Besoins d'accumulation de capital","D. Besoins d'estime et de reconnaissance","E. Aucune des réponses proposées n'est juste"],correct:[0,1,3],expl:"Les 5 besoins de Maslow sont : physiologiques, sécurité, appartenance, estime, et auto-accomplissement. L'accumulation de capital n'en fait pas partie."},
+  {subj:'socio',pts:2,q:"Quelle critique principale est formulée aujourd'hui contre la pyramide de Maslow ?",choices:["A. La classification hiérarchique stricte n'est plus considérée comme valable : un individu peut être plus sensible à un besoin supérieur même si des besoins inférieurs ne sont pas satisfaits","B. Maslow n'a jamais réalisé d'études empiriques pour valider sa théorie","C. La pyramide ne s'applique qu'aux cultures occidentales selon Maslow lui-même","D. Elle ignore complètement les besoins liés au travail","E. Aucune des réponses proposées n'est juste"],correct:[0],expl:"La critique principale : l'ordre hiérarchique strict est contesté. Un individu peut, selon son caractère, être plus sensible à un besoin supérieur indépendamment de la satisfaction des besoins inférieurs."},
+  {subj:'socio',pts:1,q:"Qui est l'auteur du concept de 'modernité liquide' ?",choices:["A. Karl Marx","B. Émile Durkheim","C. Zygmunt Bauman","D. Max Weber","E. Aucune des réponses proposées n'est juste"],correct:[2],expl:"Zygmunt Bauman (1925-2017), sociologue britannico-polonais, a développé le concept de 'modernité liquide' (Liquid Modernity, 2000)."},
+  {subj:'socio',pts:2,q:"La 'modernité liquide' de Bauman décrit une société :",choices:["A. Sans repère stable où les individus doivent s'adapter sans cesse au changement","B. Caractérisée par des institutions stables et des valeurs permanentes","C. Où la fin des grands idéaux, le doute et le relativisme prédominent","D. Fondée sur une accumulation de certitudes et de références solides","E. Aucune des réponses proposées n'est juste"],correct:[0,2],expl:"La modernité liquide chez Bauman : société sans repère stable (A), fin des grands idéaux, doute et relativisme (C). Les liens sociaux sont fragiles comme un liquide qui ne conserve pas sa forme."},
+  {subj:'socio',pts:3,q:"En résumant les grandes théories du cours de sociologie du travail, quelles associations théorie/auteur sont correctes ?",choices:["A. Aliénation du travailleur → Karl Marx","B. Solidarité mécanique et organique → Émile Durkheim","C. Pyramide des besoins → Zygmunt Bauman","D. Types de pouvoir (traditionnel, charismatique, rationnel légal) → Max Weber","E. Aucune des réponses proposées n'est juste"],correct:[0,1,3],expl:"Marx → aliénation (A). Durkheim → solidarité mécanique/organique (B). Weber → types de pouvoir (D). La pyramide des besoins est de Maslow, pas de Bauman (C est faux)."},
+
+  // ── AUTRES MATIÈRES ──
+  {subj:'rjur',pts:1,q:"Qu'est-ce que la responsabilité civile délictuelle ?",choices:["A. La responsabilité engagée en cas de violation d'un contrat","B. La responsabilité engagée envers les tiers en dehors de tout contrat","C. La sanction pénale prononcée par un tribunal","D. Une obligation administrative imposée par l'État","E. Aucune des réponses proposées n'est juste"],correct:[1],expl:"La responsabilité civile délictuelle est engagée envers les tiers en dehors de tout lien contractuel, sur le fondement de la faute, du risque ou de la garantie."},
+  {subj:'rjur',pts:2,q:"Les trois conditions cumulatives pour engager la responsabilité civile sont :",choices:["A. La faute, le dommage, le lien de causalité","B. L'intention, le préjudice, la plainte","C. La mauvaise foi, le dommage, la preuve","D. L'acte, le mobile, la récidive","E. Aucune des réponses proposées n'est juste"],correct:[0],expl:"En droit civil, il faut réunir : une faute (ou fait générateur), un dommage et un lien de causalité entre les deux."},
+  {subj:'rjur',pts:3,q:"Parmi ces affirmations sur la hiérarchie des normes en droit français, lesquelles sont exactes ?",choices:["A. La Constitution est au sommet de la hiérarchie des normes","B. Les traités internationaux ont une valeur inférieure aux lois ordinaires","C. Les règlements administratifs sont soumis aux lois","D. Le Conseil constitutionnel contrôle la conformité des lois à la Constitution","E. Aucune des réponses proposées n'est juste"],correct:[0,2,3],expl:"La Constitution est au sommet. Les traités ont une valeur supérieure aux lois (art. 55). Les règlements sont soumis aux lois. Le Conseil constitutionnel contrôle la constitutionnalité des lois."},
+  {subj:'pm',pts:1,q:"What does the acronym 'WBS' stand for in project management?",choices:["A. Work Breakdown Structure","B. Weekly Budget Summary","C. Work-Based Strategy","D. Workflow and Budget System","E. None of the proposed answers is correct"],correct:[0],expl:"WBS stands for Work Breakdown Structure — a hierarchical decomposition of the total scope of work."},
+  {subj:'pm',pts:2,q:"In the critical path method (CPM), the critical path is:",choices:["A. The longest sequence of tasks determining the minimum project duration","B. The most expensive sequence of activities in the project","C. The path with the most resources allocated","D. The sequence of tasks with the most risk","E. None of the proposed answers is correct"],correct:[0],expl:"The critical path is the longest sequence of dependent tasks. Any delay on the critical path directly delays project completion."},
+  {subj:'pm',pts:3,q:"Which of the following statements about Agile project management are correct?",choices:["A. Agile favours iterative and incremental delivery","B. Agile requires a complete specification before starting","C. The Scrum framework uses sprints, typically 2 to 4 weeks","D. Agile encourages collaboration between teams and customers throughout the project","E. None of the proposed answers is correct"],correct:[0,2,3],expl:"Agile is iterative (no upfront complete specs required). Scrum uses 2-4 week sprints. Customer collaboration is a core Agile value."},
+  {subj:'div',pts:1,q:"Quelle loi française a instauré l'obligation de parité dans les listes électorales ?",choices:["A. La loi du 6 juin 2000","B. La loi du 8 mars 2010","C. La loi du 4 août 1994","D. La loi du 27 janvier 2017","E. Aucune des réponses proposées n'est juste"],correct:[0],expl:"La loi du 6 juin 2000 a instauré la parité dans les listes électorales pour les élections municipales et législatives."},
+  {subj:'div',pts:2,q:"Qu'entend-on par 'plafond de verre' en matière de diversité ?",choices:["A. Une barrière invisible limitant l'accès des femmes et minorités aux postes élevés","B. Une règle formelle interdisant la promotion des femmes","C. Un quota légal imposé aux entreprises","D. Un phénomène uniquement observé dans les pays anglo-saxons","E. Aucune des réponses proposées n'est juste"],correct:[0],expl:"Le plafond de verre désigne des barrières informelles et invisibles qui empêchent certaines catégories de personnes d'accéder aux plus hauts niveaux hiérarchiques."},
+  {subj:'faf',pts:1,q:"What is the accounting equation?",choices:["A. Assets = Liabilities + Equity","B. Revenue – Expenses = Profit","C. Assets – Liabilities = Revenue","D. Equity = Assets + Liabilities","E. None of the proposed answers is correct"],correct:[0],expl:"The fundamental accounting equation is: Assets = Liabilities + Equity (Shareholders' Equity)."},
+  {subj:'faf',pts:2,q:"Depreciation in accounting refers to:",choices:["A. The systematic allocation of the cost of a tangible asset over its useful life","B. A decrease in the market value of an investment","C. The write-off of a bad debt","D. A reduction in inventory value","E. None of the proposed answers is correct"],correct:[0],expl:"Depreciation is the systematic allocation of an asset's cost over its useful life, reflecting its consumption in generating revenue."},
+  {subj:'faf',pts:3,q:"Which of the following are components of the income statement?",choices:["A. Revenue","B. Cost of goods sold","C. Cash and cash equivalents","D. Operating expenses","E. None of the proposed answers is correct"],correct:[0,1,3],expl:"The income statement includes revenues, COGS, and operating expenses. Cash is on the balance sheet, not the income statement."},
+  {subj:'istat',pts:1,q:"What is a p-value in hypothesis testing?",choices:["A. The probability of observing results at least as extreme as those observed, assuming H0 is true","B. The probability that the null hypothesis is true","C. The probability of making a Type II error","D. The confidence interval width","E. None of the proposed answers is correct"],correct:[0],expl:"The p-value is the probability of obtaining results at least as extreme as observed, assuming H0 is true."},
+  {subj:'istat',pts:2,q:"A Type I error in hypothesis testing consists of:",choices:["A. Rejecting H0 when it is actually true","B. Failing to reject H0 when it is actually false","C. Accepting H1 when there is insufficient data","D. Using the wrong statistical test","E. None of the proposed answers is correct"],correct:[0],expl:"A Type I error (false positive) occurs when we reject H0 when it is in fact true. Its probability equals the significance level α."},
+  {subj:'qmef',pts:1,q:"What does GDP (Gross Domestic Product) measure?",choices:["A. The total monetary value of all goods and services produced within a country in a given period","B. The total value of exports minus imports","C. The national income of a country's residents abroad","D. The total government expenditure in a year","E. None of the proposed answers is correct"],correct:[0],expl:"GDP measures the total monetary value of all final goods and services produced within a country's borders in a specific time period."},
+  {subj:'qmef',pts:2,q:"If inflation rises unexpectedly, which groups are typically harmed?",choices:["A. Creditors who lend at fixed interest rates","B. Debtors with fixed-rate loans","C. People with fixed nominal incomes","D. Holders of real assets like property","E. None of the proposed answers is correct"],correct:[0,2],expl:"Unexpected inflation harms creditors (money repaid is worth less) and people on fixed incomes. Debtors and real asset holders benefit."},
+  {subj:'axl',pts:1,q:"What does the VLOOKUP function do in Excel?",choices:["A. Searches for a value in the leftmost column of a table and returns a value from a specified column","B. Counts the number of cells that meet a given condition","C. Calculates the vertical sum of a range","D. Creates a visual lookup table in the worksheet","E. None of the proposed answers is correct"],correct:[0],expl:"VLOOKUP searches vertically in the first column of a table and returns a value from a specified column in the same row."},
+  {subj:'axl',pts:2,q:"In Excel, a pivot table allows you to:",choices:["A. Summarise and analyse large datasets dynamically","B. Protect cells from editing","C. Automatically correct spelling errors","D. Link cells between different workbooks","E. None of the proposed answers is correct"],correct:[0],expl:"Pivot tables dynamically summarise, group, count, and analyse data without complex formulas."},
+  {subj:'iwd',pts:1,q:"What does HTML stand for?",choices:["A. HyperText Markup Language","B. High Transfer Markup Language","C. HyperText Media Language","D. HyperText Management Logic","E. None of the proposed answers is correct"],correct:[0],expl:"HTML stands for HyperText Markup Language — the standard language for creating and structuring web pages."},
+  {subj:'iwd',pts:2,q:"In CSS, what is the difference between 'class' and 'id' selectors?",choices:["A. An id should be unique on a page, while a class can be applied to multiple elements","B. Classes are only for styling text, ids are for layout","C. Ids have lower CSS specificity than classes","D. Classes cannot be styled with CSS","E. None of the proposed answers is correct"],correct:[0],expl:"In CSS, id (#) must be unique per page and has higher specificity; class (.) can be reused on multiple elements."},
+  {subj:'eeco',pts:1,q:"Qu'est-ce que la politique monétaire ?",choices:["A. L'ensemble des actions menées par la banque centrale pour réguler la monnaie et le crédit","B. La politique fiscale du gouvernement","C. Les décisions budgétaires du Parlement","D. La régulation des marchés boursiers par l'État","E. Aucune des réponses proposées n'est juste"],correct:[0],expl:"La politique monétaire désigne les actions des banques centrales pour contrôler la masse monétaire et les taux d'intérêt."},
+  {subj:'eeco',pts:2,q:"Parmi ces indicateurs, lequel mesure le niveau général des prix à la consommation ?",choices:["A. L'IPC (Indice des Prix à la Consommation)","B. Le PIB (Produit Intérieur Brut)","C. L'IDH (Indice de Développement Humain)","D. Le taux de chômage","E. Aucune des réponses proposées n'est juste"],correct:[0],expl:"L'IPC mesure l'évolution des prix d'un panier de biens et services représentatif de la consommation des ménages."},
+  {subj:'ghist',pts:1,q:"The Marshall Plan (1948) was primarily designed to:",choices:["A. Provide economic assistance to rebuild Western European countries after WWII","B. Establish NATO as a military alliance","C. Create the United Nations","D. Impose reparations on Germany after WWII","E. None of the proposed answers is correct"],correct:[0],expl:"The Marshall Plan provided over $12 billion in economic aid to Western European nations to rebuild after WWII and prevent the spread of communism."},
+  {subj:'ghist',pts:2,q:"The fall of the Berlin Wall in November 1989 marked:",choices:["A. The symbolic end of the Cold War","B. The immediate reunification of Germany","C. The dissolution of the Soviet Union","D. The beginning of the collapse of communist regimes in Eastern Europe","E. None of the proposed answers is correct"],correct:[0,3],expl:"The Wall's fall symbolised the Cold War's end and triggered the collapse of Eastern European communist regimes. German reunification came in October 1990."},
+  {subj:'atps',pts:1,q:"What is the time complexity of a binary search algorithm on a sorted array?",choices:["A. O(log n)","B. O(n)","C. O(n²)","D. O(1)","E. None of the proposed answers is correct"],correct:[0],expl:"Binary search divides the search space in half at each step, resulting in O(log n) time complexity."},
+  {subj:'atps',pts:2,q:"In programming, what is recursion?",choices:["A. A function that calls itself until a base condition is met","B. A loop that iterates through an array","C. A method to sort arrays in descending order","D. A way to declare multiple variables simultaneously","E. None of the proposed answers is correct"],correct:[0],expl:"Recursion is when a function calls itself with a simpler input until reaching a base case."},
+  {subj:'pdc',pts:1,q:"Dans le processus de décision du consommateur, quelle est la première étape ?",choices:["A. La reconnaissance du besoin","B. La recherche d'information","C. L'évaluation des alternatives","D. La décision d'achat","E. Aucune des réponses proposées n'est juste"],correct:[0],expl:"Le processus de décision commence par la reconnaissance d'un besoin ou d'un problème créant un écart entre la situation actuelle et désirée."},
+  {subj:'pdc',pts:2,q:"Le marketing mix traditionnel comprend les '4P'. Quels sont-ils ?",choices:["A. Produit, Prix, Place (distribution), Promotion","B. Publicité, Prix, Profit, Personnes","C. Produit, Promotion, Parts de marché, Positionnement","D. Produit, Prix, Promotion, Personnes","E. Aucune des réponses proposées n'est juste"],correct:[0],expl:"Les 4P du marketing mix sont : Produit, Prix, Distribution (Place) et Communication (Promotion)."},
+  {subj:'actu',pts:1,q:"Quelle organisation internationale coordonne la réponse mondiale aux crises sanitaires ?",choices:["A. L'OMS (Organisation Mondiale de la Santé)","B. L'UNICEF","C. L'UNESCO","D. La FAO","E. Aucune des réponses proposées n'est juste"],correct:[0],expl:"L'OMS est l'agence spécialisée de l'ONU pour la santé internationale, coordonnant les réponses aux pandémies et crises sanitaires."},
+  {subj:'actu',pts:2,q:"Qu'est-ce que l'intelligence artificielle générative ?",choices:["A. Des systèmes IA capables de créer du contenu nouveau (texte, images, audio)","B. Un robot physique capable de reproduire des mouvements humains","C. Un logiciel de traduction automatique uniquement","D. Une technologie exclusive aux supercalculateurs gouvernementaux","E. Aucune des réponses proposées n'est juste"],correct:[0],expl:"L'IA générative désigne des modèles capables de produire du contenu original (textes, images, vidéos, code) comme GPT ou Midjourney."},
+  {subj:'actu',pts:3,q:"Parmi ces affirmations sur le changement climatique et les accords internationaux, lesquelles sont correctes ?",choices:["A. L'Accord de Paris (2015) vise à limiter le réchauffement à 1,5°C ou 2°C par rapport à l'ère préindustrielle","B. L'Accord de Paris est contraignant : les États sont sanctionnés s'ils ne respectent pas leurs engagements","C. La COP est la Conférence des Parties à la Convention-cadre des Nations Unies sur les changements climatiques","D. Le GIEC publie des rapports scientifiques sur le climat mais ne fixe pas de politiques","E. Aucune des réponses proposées n'est juste"],correct:[0,2,3],expl:"L'Accord de Paris vise 1,5-2°C mais n'est pas contraignant au sens strict (B est faux). La COP est bien la Conférence des Parties (C). Le GIEC est un organe scientifique (D)."},
+  {subj:'livre',pts:1,q:"Selon Kaï-Fu Lee dans 'IA — La plus grande mutation de l'histoire', quelle catégorie de tâches est la plus difficile à automatiser par l'IA ?",choices:["A. Les tâches routinières et répétitives","B. Les tâches cognitives complexes nécessitant créativité et empathie","C. Les tâches de traitement de données structurées","D. Les tâches de reconnaissance d'images","E. Aucune des réponses proposées n'est juste"],correct:[1],expl:"Lee souligne que l'IA excelle dans les tâches routinières, mais les tâches nécessitant créativité, empathie et jugement complexe restent difficiles à automatiser."},
+  {subj:'livre',pts:2,q:"Dans l'ouvrage de Kaï-Fu Lee, quelle est la position de la Chine dans la course à l'IA ?",choices:["A. La Chine est en retard significatif sur les États-Unis dans tous les domaines","B. La Chine est bien positionnée pour rivaliser avec les États-Unis grâce à ses données massives et ses investissements","C. La Chine se spécialise uniquement dans l'IA militaire","D. La Chine dépend entièrement des technologies américaines pour l'IA","E. Aucune des réponses proposées n'est juste"],correct:[1],expl:"Lee explique que la Chine bénéficie de volumes de données immenses, d'une culture entrepreneuriale agressive et d'investissements étatiques massifs."},
+  {subj:'mqm',pts:1,q:"Qu'est-ce que la dérivée d'une fonction en un point ?",choices:["A. La valeur de la fonction en ce point","B. Le taux de variation instantané de la fonction en ce point","C. L'intégrale de la fonction","D. La valeur maximale de la fonction","E. Aucune des réponses proposées n'est juste"],correct:[1],expl:"La dérivée représente le taux de variation instantané, c'est-à-dire la pente de la tangente à la courbe en ce point."},
+  {subj:'mqm',pts:2,q:"Pour une variable X suivant une loi normale N(μ, σ²), quelle proportion des valeurs se situe dans [μ-σ, μ+σ] ?",choices:["A. Environ 68%","B. Environ 95%","C. Environ 99.7%","D. 100%","E. Aucune des réponses proposées n'est juste"],correct:[0],expl:"La règle 68-95-99.7% : environ 68% des valeurs sont à ±1σ, 95% à ±2σ, 99.7% à ±3σ de la moyenne."},
+  {subj:'ebs2',pts:1,q:"In a formal business email, which opening is most appropriate?",choices:["A. 'Dear Mr Smith,'","B. 'Hey John,'","C. 'Yo,'","D. 'What's up team,'","E. None of the proposed answers is correct"],correct:[0],expl:"In formal business communication, 'Dear [Title] [Last Name],' is the standard and most professional opening."},
+  {subj:'ebs2',pts:2,q:"Which of the following are characteristics of an effective executive summary?",choices:["A. It summarises the key findings and recommendations concisely","B. It is typically the longest section of the report","C. It can be understood independently from the full report","D. It includes all raw data and appendices","E. None of the proposed answers is correct"],correct:[0,2],expl:"An executive summary is concise, covers key findings and recommendations, and should be understandable without the full document."},
+];
+
+let selectedSubjects=new Set(SUBJECTS.map(s=>s.id));
+let currentMode='training',currentDiff='all';
+let quizQuestions=[],currentQ=0,score=0,maxScore=0;
+let answered=false,results=[];
+let timerInterval=null,qTimerInterval=null;
+let totalSeconds=0,elapsed=0;
+
+function renderSubjectGrid(){
+  const grid=document.getElementById('subject-grid');
+  grid.innerHTML=SUBJECTS.map(s=>`
+    <div class="subject-card selected" data-id="${s.id}" onclick="toggleSubject('${s.id}',this)">
+      <div class="subject-name">${s.name}</div>
+      ${s.code!=='—'?`<div class="subject-code">#${s.code}</div>`:''}
+      <span class="subject-lang ${s.lang==='fr'?'lang-fr':'lang-en'}">${s.lang==='fr'?'Français':'English'}</span>
+    </div>`).join('');
+}
+function toggleSubject(id,el){
+  if(selectedSubjects.has(id)){selectedSubjects.delete(id);el.classList.remove('selected')}
+  else{selectedSubjects.add(id);el.classList.add('selected')}
+}
+function toggleAll(){
+  if(selectedSubjects.size===SUBJECTS.length){
+    selectedSubjects.clear();document.querySelectorAll('.subject-card').forEach(c=>c.classList.remove('selected'));
+  } else {
+    SUBJECTS.forEach(s=>selectedSubjects.add(s.id));document.querySelectorAll('.subject-card').forEach(c=>c.classList.add('selected'));
+  }
+}
+function setMode(btn,mode){document.querySelectorAll('[data-mode]').forEach(b=>b.classList.remove('active'));btn.classList.add('active');currentMode=mode;}
+function setDiff(btn,diff){document.querySelectorAll('[data-diff]').forEach(b=>b.classList.remove('active'));btn.classList.add('active');currentDiff=diff;}
+function shuffle(arr){return arr.sort(()=>Math.random()-.5)}
+
+function startQuiz(){
+  let pool=QUESTIONS.filter(q=>selectedSubjects.has(q.subj));
+  if(currentDiff!=='all') pool=pool.filter(q=>q.pts===parseInt(currentDiff));
+  if(pool.length===0){alert('Aucune question disponible. Sélectionne au moins une matière.');return;}
+  quizQuestions=shuffle([...pool]);
+  if(currentMode==='exam') quizQuestions=quizQuestions.slice(0,Math.min(100,quizQuestions.length));
+  currentQ=0;score=0;maxScore=0;results=[];
+  document.getElementById('live-score').textContent='0';
+  showScreen('screen-quiz');
+  if(currentMode==='exam'){totalSeconds=7200;elapsed=0;startGlobalTimer();}
+  else document.getElementById('timer').textContent='';
+  loadQuestion();
+}
+
+function startGlobalTimer(){
+  clearInterval(timerInterval);
+  timerInterval=setInterval(()=>{
+    elapsed++;const rem=totalSeconds-elapsed;
+    const m=Math.floor(rem/60),s=rem%60;
+    const el=document.getElementById('timer');
+    el.textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+    if(rem<300)el.classList.add('warning');
+    if(rem<=0){clearInterval(timerInterval);endQuiz();}
+  },1000);
+}
+
+function startQTimer(){
+  clearInterval(qTimerInterval);
+  if(currentMode!=='rapid')return;
+  const fill=document.getElementById('q-timer-fill');
+  fill.style.width='100%';let t=30;
+  document.getElementById('timer').textContent='0:30';
+  qTimerInterval=setInterval(()=>{
+    t--;fill.style.width=(t/30*100)+'%';
+    document.getElementById('timer').textContent='0:'+String(t).padStart(2,'0');
+    if(t<=0){clearInterval(qTimerInterval);validateQuestion();}
+  },1000);
+}
+
+function loadQuestion(){
+  if(currentQ>=quizQuestions.length){endQuiz();return;}
+  const q=quizQuestions[currentQ];
+  answered=false;
+  document.getElementById('quiz-meta').textContent=`Question ${currentQ+1} / ${quizQuestions.length}`;
+  const subj=SUBJECTS.find(s=>s.id===q.subj);
+  document.getElementById('quiz-subject').textContent=subj?subj.name:'';
+  document.getElementById('q-number').textContent=`Q${currentQ+1}`;
+  document.getElementById('q-subject-label').textContent=subj?subj.name:'';
+  const badge=document.getElementById('q-pts-badge');
+  badge.textContent=q.pts+(q.pts>1?' points':' point');
+  badge.className='q-points-badge pts-'+q.pts;
+  document.getElementById('q-text').textContent=q.q;
+  document.getElementById('multi-hint').style.display=q.correct.length>1?'block':'none';
+  document.getElementById('progress-fill').style.width=(currentQ/quizQuestions.length*100)+'%';
+  document.getElementById('q-timer-fill').style.width='100%';
+  const choices=document.getElementById('choices');
+  choices.innerHTML=q.choices.map((c,i)=>`
+    <div class="choice" data-i="${i}" onclick="toggleChoice(this,${i},${q.correct.length>1})">
+      <div class="choice-letter">${String.fromCharCode(65+i)}</div>
+      <div class="choice-text">${c}</div>
+    </div>`).join('');
+  document.getElementById('feedback-box').style.display='none';
+  document.getElementById('btn-validate').style.display='';
+  document.getElementById('btn-skip').style.display='';
+  document.getElementById('btn-next').style.display='none';
+  startQTimer();
+}
+
+function toggleChoice(el,i,multi){
+  if(answered)return;
+  if(!multi){document.querySelectorAll('.choice').forEach(c=>c.classList.remove('selected'));el.classList.add('selected');}
+  else el.classList.toggle('selected');
+}
+function getSelected(){return[...document.querySelectorAll('.choice.selected')].map(c=>parseInt(c.dataset.i));}
+
+function calcScore(q,selected){
+  const correct=q.correct;
+  const incorrect=[...Array(q.choices.length).keys()].filter(i=>!correct.includes(i));
+  const selCorr=selected.filter(i=>correct.includes(i));
+  const selIncorr=selected.filter(i=>incorrect.includes(i));
+  let reward=selCorr.length>0?(selCorr.length/correct.length)*q.pts:0;
+  let penalty=selIncorr.length>0?-(selIncorr.length/incorrect.length)*q.pts:0;
+  return Math.max(reward+penalty,-q.pts/2);
+}
+
+function validateQuestion(){
+  clearInterval(qTimerInterval);
+  const q=quizQuestions[currentQ];const selected=getSelected();
+  answered=true;
+  const sc=calcScore(q,selected);
+  score=Math.round((score+sc)*100)/100;maxScore+=q.pts;
+  document.getElementById('live-score').textContent=score.toFixed(2);
+  document.querySelectorAll('.choice').forEach(c=>{
+    const i=parseInt(c.dataset.i);
+    if(q.correct.includes(i)&&selected.includes(i))c.classList.add('correct');
+    else if(q.correct.includes(i)&&!selected.includes(i))c.classList.add('missed');
+    else if(!q.correct.includes(i)&&selected.includes(i))c.classList.add('wrong');
+  });
+  const fb=document.getElementById('feedback-box');
+  const allOk=selected.length===q.correct.length&&selected.every(i=>q.correct.includes(i));
+  const noneOk=selected.filter(i=>q.correct.includes(i)).length===0;
+  let status=allOk?'ok':noneOk&&selected.length>0?'ko':'partial';
+  if(selected.length===0)status='skip';
+  results.push({q,selected,sc,status});
+  fb.className='feedback-box '+(allOk?'feedback-correct':noneOk&&selected.length>0?'feedback-wrong':'feedback-partial');
+  document.getElementById('feedback-title').textContent=allOk?'✅ Correct !':noneOk&&selected.length>0?'❌ Incorrect':'⚡ Partiellement correct';
+  document.getElementById('feedback-score').textContent=`Score : ${sc.toFixed(2)} / ${q.pts} pt${q.pts>1?'s':''}`;
+  document.getElementById('feedback-expl').textContent=q.expl;
+  fb.style.display='block';
+  document.getElementById('btn-validate').style.display='none';
+  document.getElementById('btn-skip').style.display='none';
+  document.getElementById('btn-next').style.display='';
+}
+
+function skipQuestion(){
+  clearInterval(qTimerInterval);
+  const q=quizQuestions[currentQ];results.push({q,selected:[],sc:0,status:'skip'});maxScore+=q.pts;currentQ++;loadQuestion();
+}
+function nextQuestion(){currentQ++;if(currentQ>=quizQuestions.length)endQuiz();else loadQuestion();}
+
+// STOP MODAL
+function openStopModal(){
+  clearInterval(timerInterval);clearInterval(qTimerInterval);
+  document.getElementById('modal-q-done').textContent=currentQ;
+  document.getElementById('modal-score').textContent=score.toFixed(2);
+  document.getElementById('stop-modal').style.display='flex';
+}
+function closeStopModal(){
+  document.getElementById('stop-modal').style.display='none';
+  if(currentMode==='exam')startGlobalTimer();
+  if(currentMode==='rapid')startQTimer();
+}
+
+function endQuiz(){
+  clearInterval(timerInterval);clearInterval(qTimerInterval);
+  document.getElementById('stop-modal').style.display='none';
+  showScreen('screen-results');
+  document.getElementById('res-score').textContent=score.toFixed(2);
+  document.getElementById('res-max').textContent=`/ ${maxScore} pts max`;
+  const pct=maxScore>0?score/maxScore:0;
+  document.getElementById('res-grade').textContent=pct>=.9?'🏆 Excellent — Grand Test maîtrisé !':pct>=.7?'👍 Bien — Continue ainsi !':pct>=.5?'📚 Moyen — Des progrès à faire.':'💪 À retravailler — Revois tes cours.';
+  document.getElementById('res-correct').textContent=results.filter(r=>r.status==='ok').length;
+  document.getElementById('res-partial').textContent=results.filter(r=>r.status==='partial').length;
+  document.getElementById('res-wrong').textContent=results.filter(r=>r.status==='ko'||r.status==='skip').length;
+  document.getElementById('review-list').innerHTML=results.map((r,i)=>{
+    const subj=SUBJECTS.find(s=>s.id===r.q.subj);
+    const cls=r.status==='ok'?'ok':r.status==='partial'?'partial':'ko';
+    return `<div class="review-item ${cls}">
+      <div class="review-q">Q${i+1}. ${r.q.q.substring(0,70)}${r.q.q.length>70?'…':''}</div>
+      <div class="review-detail">${subj?subj.name:''} · ${r.q.pts}pt${r.q.pts>1?'s':''} · Score: ${r.sc.toFixed(2)}</div>
+    </div>`;
+  }).join('');
+}
+
+function restartSame(){startQuiz();}
+function goHome(){clearInterval(timerInterval);clearInterval(qTimerInterval);document.getElementById('stop-modal').style.display='none';showScreen('screen-home');}
+function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
+renderSubjectGrid();
+</script>
+</body>
+</html>
