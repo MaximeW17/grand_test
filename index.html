@@ -438,10 +438,10 @@ body.auth-bg::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;bac
 </div>
 
 </div>
-<!-- Firebase SDK -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
 import { getDatabase, ref, get, set, onValue, update, remove, serverTimestamp, onDisconnect } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-database.js";
+import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
 import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
 
 const firebaseConfig = {
@@ -458,13 +458,23 @@ const fbApp = initializeApp(firebaseConfig);
 const fbDB = getDatabase(fbApp);
 const fbAuth = getAuth(fbApp);
 
-// Sign in anonymously — every visitor gets a UID so security rules work
 signInAnonymously(fbAuth).catch(err => {
   console.error('Anonymous sign-in failed:', err);
-  window.dispatchEvent(new CustomEvent('firebase-auth-error', { detail: err }));
 });
 
-// Wait for auth to be ready before exposing the DB
+onAuthStateChanged(fbAuth, (user) => {
+  if(user){
+    window.__fb = {
+      db: fbDB,
+      auth: fbAuth,
+      uid: user.uid,
+      ref: (path) => ref(fbDB, path),
+      get, set, onValue, update, remove, serverTimestamp, onDisconnect
+    };
+    window.dispatchEvent(new Event('firebase-ready'));
+  }
+});
+
 onAuthStateChanged(fbAuth, (user) => {
   if(user){
     window.__fb = {
@@ -480,21 +490,17 @@ onAuthStateChanged(fbAuth, (user) => {
 </script>
 
 <script>
-/* ================================================================
-   AUTH & SESSION MANAGEMENT (Firebase Realtime Database)
-   ================================================================ */
-// Admin credentials are NOT stored in this file — they live in Firebase
-// at /admin_config and are protected by security rules.
-let adminConfig = null;       // { email, passHash } loaded from Firebase after auth
 
-let currentUser = null;      // { email, isAdmin }
-let deviceId = null;          // unique ID for this tab/device
-let sessionWatcher = null;    // Firebase onValue unsubscribe
+let adminConfig = null;      
+
+let currentUser = null;      
+let deviceId = null;          
+let sessionWatcher = null;   
 let emailListWatcher = null;
 let sessionsWatcher = null;
 let authReady = false;
 
-// Generate / retrieve a stable device ID for this browser
+
 function getDeviceId(){
   let id = localStorage.getItem('gt_device_id');
   if(!id){
@@ -504,14 +510,14 @@ function getDeviceId(){
   return id;
 }
 
-// SHA-256 hash using Web Crypto API
+
 async function sha256(text){
   const buf = new TextEncoder().encode(text);
   const hash = await crypto.subtle.digest('SHA-256', buf);
   return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-// Normalize email for keys (Firebase keys cannot contain .#$[]/)
+
 function emailKey(email){
   return email.toLowerCase().trim().replace(/\./g, ',');
 }
@@ -519,18 +525,15 @@ function unKeyEmail(key){
   return key.replace(/,/g, '.');
 }
 
-// Wait for Firebase to be ready
 function onFirebaseReady(cb){
   if(window.__fb) cb();
   else window.addEventListener('firebase-ready', cb, { once: true });
 }
 
-/* -------- INITIALIZATION -------- */
 onFirebaseReady(async () => {
   deviceId = getDeviceId();
   authReady = true;
 
-  // Load admin config from Firebase (protected by security rules - requires auth)
   try {
     const cfgSnap = await window.__fb.get(window.__fb.ref('admin_config'));
     if(cfgSnap.exists()){
@@ -546,19 +549,15 @@ onFirebaseReady(async () => {
     console.error('Failed to load admin config:', e);
   }
 
-  // Check if user was previously logged in (persist via localStorage)
   const savedEmail = localStorage.getItem('gt_session_email');
   const savedIsAdmin = localStorage.getItem('gt_session_admin') === '1';
 
   if(savedEmail){
-    // Verify session is still valid on server
     try {
       const k = emailKey(savedEmail);
       const sessSnap = await window.__fb.get(window.__fb.ref('active_sessions/' + k));
       if(sessSnap.exists() && sessSnap.val().deviceId === deviceId){
-        // Still our session
         currentUser = { email: savedEmail, isAdmin: savedIsAdmin };
-        // If admin, we need to re-establish admin_sessions flag for security rules
         if(savedIsAdmin && adminConfig && savedEmail === adminConfig.email){
           try {
             await window.__fb.set(window.__fb.ref('admin_sessions/' + window.__fb.uid), {
@@ -571,7 +570,6 @@ onFirebaseReady(async () => {
         startSessionWatcher();
         showAppLoggedIn();
       } else {
-        // Session invalidated
         clearLocalSession();
         showLoginScreen();
       }
@@ -615,10 +613,8 @@ function showAppLoggedIn(){
   document.getElementById('user-bar-admin').style.display = currentUser.isAdmin ? 'inline-block' : 'none';
 
   if(currentUser.isAdmin){
-    // Admin goes to admin screen by default; can switch to app via button
     showAdminScreen();
   } else {
-    // Regular user goes to home
     hideAllScreens();
     document.getElementById('screen-home').classList.add('active');
   }
@@ -706,8 +702,7 @@ async function loginUser(){
       userAgent: navigator.userAgent.substring(0, 150)
     });
 
-    // 4. Save local session + go in
-    // In user login, we never mark someone as admin — they must use the admin tab
+    
     const isAdmin = false;
     localStorage.setItem('gt_session_email', email);
     localStorage.setItem('gt_session_admin', isAdmin ? '1' : '0');
@@ -721,7 +716,6 @@ async function loginUser(){
   }
 }
 
-/* -------- ADMIN LOGIN -------- */
 async function loginAdmin(){
   const email = document.getElementById('admin-email').value.trim().toLowerCase();
   const pass = document.getElementById('admin-pass').value;
@@ -734,7 +728,6 @@ async function loginAdmin(){
 
   setBtnLoading('btn-login-admin', true);
 
-  // Make sure admin config is loaded
   if(!adminConfig){
     try {
       const cfgSnap = await window.__fb.get(window.__fb.ref('admin_config'));
@@ -751,13 +744,11 @@ async function loginAdmin(){
     return;
   }
 
-  // Constant-time-ish comparison: always hash before checking email, to avoid leaking which field is wrong
   const hash = await sha256(pass);
   const emailOk = (email === adminConfig.email);
   const passOk = (hash === adminConfig.passHash);
 
   if(!emailOk || !passOk){
-    // Small delay to mitigate brute-force timing
     setTimeout(() => {
       setBtnLoading('btn-login-admin', false);
       showErr('admin', '❌ Identifiants incorrects.');
@@ -766,14 +757,12 @@ async function loginAdmin(){
   }
 
   try {
-    // 1. Set the admin flag in admin_sessions (required by security rules to write authorized_emails)
     await window.__fb.set(window.__fb.ref('admin_sessions/' + window.__fb.uid), {
       isAdmin: true,
       email: email,
       loggedAt: Date.now()
     });
 
-    // 2. Register device session
     const key = emailKey(email);
     const sessSnap = await window.__fb.get(window.__fb.ref('active_sessions/' + key));
     if(sessSnap.exists() && sessSnap.val().deviceId !== deviceId){
@@ -792,7 +781,6 @@ async function loginAdmin(){
       userAgent: navigator.userAgent.substring(0, 150)
     });
 
-    // 3. Auto-add admin to authorized_emails on first login (now that rules allow it)
     try {
       const authSnap = await window.__fb.get(window.__fb.ref('authorized_emails/' + key));
       if(!authSnap.exists()){
@@ -816,7 +804,6 @@ async function loginAdmin(){
   }
 }
 
-/* -------- SESSION WATCHER (detect kick from another device) -------- */
 function startSessionWatcher(){
   stopSessionWatcher();
   if(!currentUser) return;
@@ -1021,7 +1008,6 @@ function showToast(msg, type){
   setTimeout(() => t.remove(), 2500);
 }
 
-/* Allow pressing Enter on inputs */
 document.addEventListener('DOMContentLoaded', () => {
   const le = document.getElementById('login-email');
   if(le) le.addEventListener('keypress', e => { if(e.key === 'Enter') loginUser(); });
@@ -1033,7 +1019,6 @@ document.addEventListener('DOMContentLoaded', () => {
   if(ne) ne.addEventListener('keypress', e => { if(e.key === 'Enter') adminAddEmail(); });
 });
 
-/* Timeout failsafe: if Firebase doesn't respond within 8s, show login with error */
 setTimeout(() => {
   if(!authReady){
     document.getElementById('auth-loading-text').innerHTML =
@@ -1041,9 +1026,6 @@ setTimeout(() => {
   }
 }, 8000);
 
-/* ================================================================
-   ORIGINAL APP (unchanged)
-   ================================================================ */
 const SUBJECTS=[
   {id:'apt2',name:'Academic & Professional Toolbox II',code:'4044',lang:'fr'},
   {id:'axl',name:'Advanced Excel',code:'1803',lang:'en'},
