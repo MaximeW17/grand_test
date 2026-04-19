@@ -1425,7 +1425,7 @@ function loadQuestion(){
   const badge=document.getElementById('q-pts-badge');
   badge.textContent=q.pts+(q.pts>1?' points':' point');
   badge.className='q-points-badge pts-'+q.pts;
-  document.getElementById('q-text').textContent=q.q;
+  document.getElementById('q-text').innerHTML=q.q;
   document.getElementById('multi-hint').style.display='none';
   document.getElementById('progress-fill').style.width=(currentQ/quizQuestions.length*100)+'%';
   document.getElementById('q-timer-fill').style.width='100%';
