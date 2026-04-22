@@ -8,11 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
 <style>
-/* ============================================================
-   Grand Test IESEG — refonte visuelle (éditoriale & moderne)
-   Typo : Inter (corps) + Instrument Serif (titres)
-   Palette : navy profond / or chaud / crème / papier
-   ============================================================ */
+
 
 *{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
 
@@ -23,9 +19,9 @@
   --gold:#C39343;
   --gold-deep:#9E7222;
   --gold-soft:#F3E4C4;
-  --page:#0A1220;          /* fond extérieur très sombre pour contraste */
+  --page:#0A1220;          
   --page-2:#131C30;
-  --cream:#F5EFE4;         /* crème claire pour zones intérieures */
+  --cream:#F5EFE4;         
   --cream-2:#EDE4D3;
   --paper:#FBF8F1;
   --line:#E3DACA;
@@ -61,7 +57,7 @@ body{
   background-attachment:fixed;
 }
 
-/* ==== APP SHELL ==== */
+
 #app{
   width:100%;
   max-width:760px;
@@ -80,7 +76,7 @@ body{
 .screen.active{display:block;animation:fade .35s ease}
 @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
 
-/* ==== HOME HEADER ==== */
+
 .home-header{
   background:var(--ink);
   color:#fff;
@@ -130,7 +126,7 @@ body{
   box-shadow:0 0 0 3px rgba(195,147,67,.25);
 }
 
-/* ==== SUBJECT GRID ==== */
+
 .subject-grid{
   display:grid;
   grid-template-columns:repeat(auto-fill,minmax(170px,1fr));
@@ -236,7 +232,7 @@ body{
 }
 .start-btn:hover{background:var(--gold-deep);transform:translateY(-1px);box-shadow:0 10px 22px -8px rgba(195,147,67,.55)}
 
-/* ==== QUIZ ==== */
+
 .quiz-header{
   background:var(--ink);color:#fff;
   padding:1.1rem 1.5rem;
@@ -1161,7 +1157,6 @@ body.auth-bg::before{content:none}
 </div>
 
 </div>
-<!-- Firebase SDK -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
 import { getDatabase, ref, get, set, onValue, update, remove, serverTimestamp, onDisconnect } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-database.js";
@@ -1181,7 +1176,6 @@ const fbApp = initializeApp(firebaseConfig);
 const fbDB = getDatabase(fbApp);
 const fbAuth = getAuth(fbApp);
 
-// Sign in anonymously — every visitor gets a UID so security rules work
 signInAnonymously(fbAuth).catch(err => {
   console.error('Anonymous sign-in failed:', err);
   window.dispatchEvent(new CustomEvent('firebase-auth-error', { detail: err }));
@@ -1248,28 +1242,21 @@ function onFirebaseReady(cb){
   else window.addEventListener('firebase-ready', cb, { once: true });
 }
 
-/* -------- INITIALIZATION -------- */
 onFirebaseReady(async () => {
   deviceId = getDeviceId();
   authReady = true;
 
-  // admin_config is now fully server-side protected (read:false, write:false)
-  // Credentials are validated via security rules during admin_sessions write.
-  // adminConfig stays null in the client — we only know the admin email once they log in.
 
-  // Check if user was previously logged in (persist via localStorage)
+
   const savedEmail = localStorage.getItem('gt_session_email');
   const savedIsAdmin = localStorage.getItem('gt_session_admin') === '1';
 
   if(savedEmail){
-    // Admin sessions are NOT restored after refresh (security choice).
-    // This prevents anyone who steals localStorage from becoming admin.
     if(savedIsAdmin){
       clearLocalSession();
       showLoginScreen();
       return;
     }
-    // For regular users: verify session is still valid on server
     try {
       const k = emailKey(savedEmail);
       const sessSnap = await window.__fb.get(window.__fb.ref('active_sessions/' + k));
@@ -1321,10 +1308,8 @@ function showAppLoggedIn(){
   document.getElementById('user-bar-admin').style.display = currentUser.isAdmin ? 'inline-block' : 'none';
 
   if(currentUser.isAdmin){
-    // Admin goes to admin screen by default; can switch to app via button
     showAdminScreen();
   } else {
-    // Regular user goes to home
     hideAllScreens();
     document.getElementById('screen-home').classList.add('active');
   }
